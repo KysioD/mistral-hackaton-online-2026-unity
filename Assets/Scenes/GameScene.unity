@@ -2136,7 +2136,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovementController
   walkSpeed: 10
   sprintSpeed: 15
-  cameraSensitivity: 1
+  cameraSensitivity: 0.1
   jumpStrength: 4.905
   interactRange: 2
 --- !u!1 &1974991093
