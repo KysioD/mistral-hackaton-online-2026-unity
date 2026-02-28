@@ -6,19 +6,20 @@ public class GameLogic : MonoBehaviour
 {
     public static bool Paused { get; set; } = false;
 
-
     [SerializeField] private Transform pauseUi;
 
-    private PlayerInputActions playerInputActions;
+    public static PlayerInputActions playerInputActions;
 
     void Awake()
     {
         playerInputActions = new PlayerInputActions();
-
         pauseUi.gameObject.SetActive(false);
 
         playerInputActions.Global.Enable();
+        playerInputActions.Player.Enable();
         playerInputActions.Global.Pause.performed += Pause;
+
+        Debug.Log(new EntityStatus.Wanted().Serialize());
     }
 
     void Pause(InputAction.CallbackContext context)
@@ -46,5 +47,7 @@ public class GameLogic : MonoBehaviour
     void OnDestroy()
     {
         playerInputActions.Global.Disable();
+        playerInputActions.Player.Disable();
+        playerInputActions.UI.Disable();
     }
 }
