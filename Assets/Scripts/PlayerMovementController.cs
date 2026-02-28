@@ -5,7 +5,7 @@ public class PlayerMovementController : MonoBehaviour
 {
     [SerializeField] private float walkSpeed = 10.0f;
     [SerializeField] private float sprintSpeed = 15.0f;
-    [SerializeField] private float cameraSensitivity = 1.0f;
+    [SerializeField] private float cameraSensitivity = 0.1f;
     [SerializeField] private float jumpStrength = 9.81f / 2;
     [SerializeField] private float interactRange = 2.0f;
 
@@ -36,6 +36,15 @@ public class PlayerMovementController : MonoBehaviour
         {
             grounded = true;
         }
+
+        Vector2 lookInputVector = GameLogic.playerInputActions.Player.Look.ReadValue<Vector2>();
+        float mouseX = lookInputVector.x * cameraSensitivity;
+        float mouseY = lookInputVector.y * cameraSensitivity;
+
+        yRotation += mouseX;
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -90.0f, 90.0f);
+        camera.transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0.0f);
     }
 
     void FixedUpdate()
@@ -48,15 +57,6 @@ public class PlayerMovementController : MonoBehaviour
         velocity += moveInputVector.y * camera.transform.forward;
         velocity *= grounded ? moveSpeed : moveSpeed / 2;
         rigidBody.AddForce(velocity, ForceMode.Force);
-
-        Vector2 lookInputVector = GameLogic.playerInputActions.Player.Look.ReadValue<Vector2>();
-        float mouseX = lookInputVector.x * cameraSensitivity;
-        float mouseY = lookInputVector.y * cameraSensitivity;
-
-        yRotation += mouseX;
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90.0f, 90.0f);
-        camera.transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0.0f);
     }
 
     void Jump(InputAction.CallbackContext context)
