@@ -15,7 +15,6 @@ namespace DefaultNamespace
             Debug.Log("Loading app");
             await LoadNpcs();
             Debug.Log("App loaded");
-            await LoadGameSceneAsync(GameSceneName);
         }
 
         private async Task<PaginatedNpcsEntity> LoadNpcs()
