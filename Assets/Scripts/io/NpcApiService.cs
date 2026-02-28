@@ -33,5 +33,11 @@ namespace io
             
             return await GenericHttpService.Instance.GetAsync<NpcDto>(endpint);
         }
+
+        public async Task StreamNpcTalk(string npcId, string playerMessage, System.Action<string> onChunkReceived)
+        {
+            string endpoint = $"npcs/{npcId}/talk";
+            await GenericHttpService.Instance.StreamPostAsync(endpoint, playerMessage, onChunkReceived);
+        }
     }
 }
