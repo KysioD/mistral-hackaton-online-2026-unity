@@ -58,14 +58,15 @@ namespace io
             return JsonConvert.DeserializeObject<T>(request.downloadHandler.text);
         }
         
-        public async Task StreamPostAsync(string endpoint, string message, Action<string> onChunkReceived)
+        public async Task StreamPostAsync(string endpoint, string message, string sessionId, Action<string> onChunkReceived)
         {
             string url = $"{BaseUrl}/{endpoint}";
 
             try
             {
                 // 1. On crée le payload avec l'objet anonyme (nom de variable "message" attendu par ton API)
-                var payload = new { message = message };
+                var payload = new { message = message, sessionId = sessionId };
+                
                 string jsonBody = JsonConvert.SerializeObject(payload);
         
                 // 2. On prépare le contenu au format JSON
@@ -74,7 +75,7 @@ namespace io
                 // 3. On construit la requête POST
                 using var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
-                    Content = content
+                    Content = content,
                 };
 
                 // 4. On l'envoie avec l'option magique pour le streaming

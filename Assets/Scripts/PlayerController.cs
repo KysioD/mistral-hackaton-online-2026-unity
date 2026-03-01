@@ -1,3 +1,4 @@
+using npcs;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,7 +11,7 @@ public class PlayerController : MonoBehaviour
 
     private PlayerEntity entity;
     private PlayerHudController hudController;
-    private NpcDialogueController dialogueController;
+    private NpcUi dialogueController;
     private Camera camera;
 
     void Awake()
@@ -23,7 +24,7 @@ public class PlayerController : MonoBehaviour
         GameLogic.playerInputActions.Player.Attack.performed += Attack;
 
         hudController = hud.GetComponent<PlayerHudController>();
-        dialogueController = npcUi.GetComponent<NpcDialogueController>();
+        dialogueController = npcUi.GetComponent<NpcUi>();
         camera = GetComponentInChildren<Camera>();
     }
 

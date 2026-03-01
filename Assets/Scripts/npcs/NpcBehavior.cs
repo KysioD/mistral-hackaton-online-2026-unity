@@ -1,40 +1,52 @@
+using DefaultNamespace.npcs.functions;
+using io;
+using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
 
-public class NpcBehavior : MonoBehaviour
+namespace npcs
 {
-    [SerializeField] private TextMeshPro entityNameMesh;
-
-    private NpcEntity entity;
-
-    void Start()
+    public class NpcBehavior : MonoBehaviour
     {
-        entity = new NpcEntity();
-        Spawn();
-    }
+        [SerializeField] private TextMeshPro entityNameMesh;
+        private MonoBehaviour functionManagerObject;
 
-    void Update()
-    {
+        private NpcEntity entity;
+        
+        void Start()
+        {
+            entity = new NpcEntity();
+            entity.functionManager = this.GetComponent<INpcFunction>();
+            Spawn();
+        }
 
-    }
+        void Update()
+        {
 
-    public void InteractWith()
-    {
+        }
 
-    }
+        public void InteractWith()
+        {
 
-    void Spawn()
-    {
-        this.gameObject.SetActive(true);
-        Vector4 spawnCoords = entity.SpawnCoords;
-        //this.transform.position = new Vector3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
-        this.transform.localRotation = Quaternion.Euler(new Vector3(0.0f, spawnCoords.w, 0.0f));
-        entityNameMesh.SetText(entity.Name);
+        }
 
-    }
+        void Spawn()
+        {
+            this.gameObject.SetActive(true);
+            Vector4 spawnCoords = entity.SpawnCoords;
+            //this.transform.position = new Vector3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
+            this.transform.localRotation = Quaternion.Euler(new Vector3(0.0f, spawnCoords.w, 0.0f));
+            entityNameMesh.SetText(entity.Name);
 
-    public ref NpcEntity GetNpcEntity()
-    {
-        return ref entity;
+        }
+
+        public ref NpcEntity GetNpcEntity()
+        {
+            return ref entity;
+        }
+
+        public async void Talk(string message)
+        {
+        }
     }
 }

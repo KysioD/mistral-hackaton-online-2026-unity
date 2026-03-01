@@ -154,7 +154,7 @@ GameObject:
   - component: {fileID: 4075723746544935452}
   - component: {fileID: 7750782180182904080}
   m_Layer: 3
-  m_Name: NpcTemplate
+  m_Name: ApothecaryTemplate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
