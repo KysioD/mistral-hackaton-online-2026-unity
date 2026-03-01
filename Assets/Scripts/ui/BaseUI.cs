@@ -25,13 +25,14 @@ public class BaseUI : MonoBehaviour
 
     public virtual void CloseUI()
     {
-        if(this.closeCallback!=null) this.closeCallback.Invoke();
+        if (!Opened) return;
+        Opened = false;
+        if (this.closeCallback != null) this.closeCallback.Invoke();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         GameLogic.playerInputActions.UI.Disable();
         GameLogic.playerInputActions.Player.Enable();
         GameLogic.InUi = false;
-        Opened = false;
     }
 
     void Close(InputAction.CallbackContext ctx)

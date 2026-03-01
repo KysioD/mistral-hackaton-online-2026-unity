@@ -1,3 +1,4 @@
+using System.Collections;
 using System.IO;
 using audio;
 using io;
@@ -19,6 +20,7 @@ public class NpcUi : BaseUI
     [SerializeField] private Button voiceBtn;
     [SerializeField] private TMP_Dropdown micDropdown;
 
+    [SerializeField] private float dialogueCloseDelay = 5.0f;
     [SerializeField] private float maxRecordingSeconds = 30f;
 
     private NpcEntity trackingEntity;
@@ -27,18 +29,44 @@ public class NpcUi : BaseUI
     private string _transcriptBuffer = "";
     private Coroutine _debounceCoroutine;
     private Coroutine _recordingTimeoutCoroutine;
+    private Coroutine _closeDialogueCoroutine;
+
+    // Incremented each time a conversation opens, used to discard stale API responses.
+    private int _conversationId = 0;
+
+    public void Init(ref NpcEntity entity)
+    {
+        // If switching to a different NPC, clear the previous session.
+        if (trackingEntity != null && trackingEntity.UUID != entity.UUID)
+            sessionId = null;
+
+        // Cancel any pending delayed close before reopening.
+        CancelPendingDialogueClose();
+
+        trackingEntity = entity;
+        OpenUI(null);
+    }
 
     public override void OpenUI(System.Action closeCb)
     {
+        // Cancel any pending delayed close (player may be reopening within the 5-second window).
+        CancelPendingDialogueClose();
+        _conversationId++;
+
         base.OpenUI(closeCb);
 
         npcNameMesh.SetText(trackingEntity.Name);
+
         playerRequestBtn.onClick.RemoveListener(SubmitRequest);
         playerRequestBtn.onClick.AddListener(SubmitRequest);
+
         playerRequestTransform.gameObject.SetActive(true);
         npcResponseTransform.gameObject.SetActive(false);
+        npcResponseText.SetText("");
+
         this.gameObject.SetActive(true);
-        voxtralCapture.OnTranscriptReceived -= HandleVoxtralResponse;
+
+        voztralCapture.OnTranscriptReceived -= HandleVoxtralResponse;
         voxtralCapture.OnTranscriptReceived += HandleVoxtralResponse;
         voxtralCapture.SetMicDropdown(micDropdown);
         _transcriptBuffer = "";
@@ -52,9 +80,15 @@ public class NpcUi : BaseUI
 
     public override void CloseUI()
     {
+        // Guard: already closed, nothing to do.
+        if (!Opened) return;
+
+        // base.CloseUI() sets Opened = false and restores player controls.
         base.CloseUI();
+
         playerRequestBtn.onClick.RemoveListener(SubmitRequest);
         playerRequestTransform.gameObject.SetActive(false);
+
         voxtralCapture.OnTranscriptReceived -= HandleVoxtralResponse;
 
         if (voiceBtn != null)
@@ -79,6 +113,32 @@ public class NpcUi : BaseUI
             voxtralCapture.StopCapturing();
             _isRecording = false;
         }
+
+        // Keep the dialogue panel visible for a few seconds, then fully hide the UI.
+        _closeDialogueCoroutine = StartCoroutine(CloseDialogueAfterDelay(dialogueCloseDelay));
+    }
+
+    private IEnumerator CloseDialogueAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        CloseNpcUi();
+    }
+
+    private void CancelPendingDialogueClose()
+    {
+        if (_closeDialogueCoroutine != null)
+        {
+            StopCoroutine(_closeDialogueCoroutine);
+            _closeDialogueCoroutine = null;
+        }
+    }
+
+    private void CloseNpcUi()
+    {
+        _closeDialogueCoroutine = null;
+        trackingEntity = null;
+        sessionId = null;
+        this.gameObject.SetActive(false);
     }
 
     private void ToggleVoiceCapture()
@@ -95,18 +155,11 @@ public class NpcUi : BaseUI
         }
     }
 
-    private System.Collections.IEnumerator RecordingTimeoutCoroutine()
+    private IEnumerator RecordingTimeoutCoroutine()
     {
         yield return new WaitForSeconds(maxRecordingSeconds);
         Debug.LogWarning($"[Voxtral] Timeout ({maxRecordingSeconds}s) — arrêt automatique de l'enregistrement.");
         FlushTranscript();
-    }
-
-    private void CloseNpcUi()
-    {
-        trackingEntity = null;
-        this.gameObject.SetActive(false);
-        this.sessionId = null;
     }
 
     private void HandleVoxtralResponse(string json)
@@ -155,7 +208,7 @@ public class NpcUi : BaseUI
         }
     }
 
-    private System.Collections.IEnumerator SubmitTranscriptAfterDelay(float delay)
+    private IEnumerator SubmitTranscriptAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
         FlushTranscript();
@@ -191,26 +244,29 @@ public class NpcUi : BaseUI
         SubmitRequest(message);
     }
 
-    public void Init(ref NpcEntity entity)
-    {
-        trackingEntity = entity;
-        this.OpenUI(() => { 
-            Invoke(nameof(CloseNpcUi), 5.0f);
-        });
-    }
-
     private async void SubmitRequest(string message)
     {
+        if (trackingEntity == null) return;
+
+        // Capture conversation-specific values so stale responses from a previous
+        // conversation can be detected and discarded.
+        int conversationId = _conversationId;
+        string entityUUID = trackingEntity.UUID;
+        string entityName = trackingEntity.Name;
+        var functionManager = trackingEntity.functionManager;
+        string requestSessionId = sessionId;
+
         if (npcResponseText != null)
-        {
             npcResponseText.SetText("");
-        }
-        
+
         string fullResponse = "";
-        
-        await NpcApiService.Instance.StreamNpcTalk(trackingEntity.UUID, message, sessionId,response =>
+
+        await NpcApiService.Instance.StreamNpcTalk(entityUUID, message, requestSessionId, response =>
         {
-            Debug.Log($"NPC {trackingEntity.Name} says: {response}");
+            // Discard responses that belong to a previous conversation.
+            if (_conversationId != conversationId) return;
+
+            Debug.Log($"NPC {entityName} says: {response}");
 
             LLMStreamingResponse streamingResponse = JsonConvert.DeserializeObject<LLMStreamingResponse>(response);
 
@@ -221,14 +277,12 @@ public class NpcUi : BaseUI
             }
 
             if (streamingResponse.SessionId != null)
-            {
-                this.sessionId = streamingResponse.SessionId;
-            }
+                sessionId = streamingResponse.SessionId;
 
             if ("tool_call".Equals(streamingResponse.Type))
             {
-                string result = trackingEntity.functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
-                SubmitRequest("TOOL CALL '"+streamingResponse.ToolName+"' RESPONSE : "+result);
+                string result = functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
+                SubmitRequest("TOOL CALL '" + streamingResponse.ToolName + "' RESPONSE : " + result);
             }
             else if ("text".Equals(streamingResponse.Type))
             {
@@ -238,7 +292,7 @@ public class NpcUi : BaseUI
             }
             else if ("done".Equals(streamingResponse.Type))
             {
-                Debug.Log("End of response stream for NPC " + trackingEntity.Name);
+                Debug.Log("End of response stream for NPC " + entityName);
             }
             else if ("close".Equals(streamingResponse.Type) || streamingResponse.Closed)
             {
@@ -253,13 +307,13 @@ public class NpcUi : BaseUI
         Debug.Log("Full NPC response: " + fullResponse);
     }
 
-    private async void SubmitRequest()
+    private void SubmitRequest()
     {
+        if (trackingEntity == null) return;
         Debug.Log("Send to the API: npcid: " + trackingEntity.UUID + " data: " + playerRequestInputField.text);
 
         string message = playerRequestInputField.text;
         playerRequestInputField.text = "";
-        
         SubmitRequest(message);
     }
 }
