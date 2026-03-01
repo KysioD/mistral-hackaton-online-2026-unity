@@ -1,3 +1,4 @@
+using System.Linq;
 using npcs;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -32,6 +33,10 @@ public class PlayerController : MonoBehaviour
     {
         //hudController.SetHealth(entity.Health);
         hudController.SetGold(entity.Gold);
+        hudController.setItems(
+            "Inventory:\n" +
+            string.Join("\n", entity.Inventory.Keys.Cast<string>())
+        );
         //hudController.SetMagic(entity.MagicLevel);
     }
 

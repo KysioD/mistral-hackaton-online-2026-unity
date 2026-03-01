@@ -18,13 +18,23 @@ namespace DefaultNamespace.npcs.functions
         public string ListPlayerItems()
         {
             Debug.Log("Listing player items");
-            return $"Player has {playerEntity.Gold} coins and has no items."; // TODO : Add simple item management system to player
+            return $"Player has {playerEntity.Gold} coins and has the following items : {string.Join(", ", playerEntity.Inventory)}";
         }
 
+        /*
+         * The trader by an item to the player
+         */
         public string BuyItem(string name, int price)
         {
             Debug.Log($"Buying item {name} for {price} coins");
+            
+            if (!playerEntity.Inventory.Contains(name))
+            {
+                return $"Player does not have {name} in inventory";
+            }
+            
             npcEntity.TransferGoldTo(playerEntity, price);
+            playerEntity.RemoveFromInventory(name, 1);
             return $"Bought {name} for {price} coins";
         }
 

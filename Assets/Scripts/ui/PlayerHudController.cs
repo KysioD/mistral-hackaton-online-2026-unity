@@ -6,6 +6,7 @@ public class PlayerHudController : MonoBehaviour
     //[SerializeField] TextMeshProUGUI healthMesh;
     [SerializeField] TextMeshProUGUI goldMesh;
     //[SerializeField] TextMeshProUGUI magicMesh;
+    [SerializeField] TextMeshProUGUI playeItems;
 
     void Awake()
     {
@@ -20,6 +21,11 @@ public class PlayerHudController : MonoBehaviour
     public void SetGold(float gold)
     {
         goldMesh.SetText(""+gold);
+    }
+    
+    public void setItems(string items)
+    {
+        playeItems.SetText(items);
     }
 
     //public void SetMagic(int magic)
