@@ -19,11 +19,14 @@ public class NpcUi : BaseUI
     [SerializeField] private Button voiceBtn;
     [SerializeField] private TMP_Dropdown micDropdown;
 
+    [SerializeField] private float maxRecordingSeconds = 30f;
+
     private NpcEntity trackingEntity;
     private string sessionId;
     private bool _isRecording;
     private string _transcriptBuffer = "";
     private Coroutine _debounceCoroutine;
+    private Coroutine _recordingTimeoutCoroutine;
 
     public override void OpenUI(System.Action closeCb)
     {
@@ -62,6 +65,13 @@ public class NpcUi : BaseUI
             StopCoroutine(_debounceCoroutine);
             _debounceCoroutine = null;
         }
+
+        if (_recordingTimeoutCoroutine != null)
+        {
+            StopCoroutine(_recordingTimeoutCoroutine);
+            _recordingTimeoutCoroutine = null;
+        }
+
         _transcriptBuffer = "";
 
         if (_isRecording)
@@ -81,7 +91,15 @@ public class NpcUi : BaseUI
         {
             voxtralCapture.StartCapturing();
             _isRecording = true;
+            _recordingTimeoutCoroutine = StartCoroutine(RecordingTimeoutCoroutine());
         }
+    }
+
+    private System.Collections.IEnumerator RecordingTimeoutCoroutine()
+    {
+        yield return new WaitForSeconds(maxRecordingSeconds);
+        Debug.LogWarning($"[Voxtral] Timeout ({maxRecordingSeconds}s) — arrêt automatique de l'enregistrement.");
+        FlushTranscript();
     }
 
     private void CloseNpcUi()
@@ -117,7 +135,16 @@ public class NpcUi : BaseUI
 
                 if (isFinal)
                 {
-                    FlushTranscript();
+                    if (_debounceCoroutine != null)
+                    {
+                        StopCoroutine(_debounceCoroutine);
+                        _debounceCoroutine = null;
+                    }
+                    string message = _transcriptBuffer.Trim();
+                    _transcriptBuffer = "";
+                    playerRequestInputField.text = "";
+                    if (!string.IsNullOrWhiteSpace(message))
+                        SubmitRequest(message);
                     return;
                 }
 
@@ -140,6 +167,12 @@ public class NpcUi : BaseUI
         {
             StopCoroutine(_debounceCoroutine);
             _debounceCoroutine = null;
+        }
+
+        if (_recordingTimeoutCoroutine != null)
+        {
+            StopCoroutine(_recordingTimeoutCoroutine);
+            _recordingTimeoutCoroutine = null;
         }
 
         string message = _transcriptBuffer.Trim();

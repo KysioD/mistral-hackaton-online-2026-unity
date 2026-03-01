@@ -60,16 +60,7 @@ namespace audio
         {
             if (_isCapturing) return;
             _isCapturing = true;
-
-            await VoxtralWebSocketService.Instance.ConnectAsync();
-
-            if (!VoxtralWebSocketService.Instance.IsConnected)
-            {
-                Debug.LogError("[Voxtral] Cannot start capture: WebSocket not connected.");
-                _isCapturing = false;
-                return;
-            }
-
+            
             var devices = Microphone.devices;
             _micDevice = !string.IsNullOrEmpty(micDeviceOverride) ? micDeviceOverride
                         : _micDropdown != null && devices.Length > 0 ? devices[_micDropdown.value]
@@ -80,6 +71,16 @@ namespace audio
             _lastSamplePos = 0;
 
             Debug.Log($"[Voxtral] Capture started — mic: '{_micDevice ?? "default"}' @ {sampleRate} Hz");
+
+            await VoxtralWebSocketService.Instance.ConnectAsync();
+
+            if (!VoxtralWebSocketService.Instance.IsConnected)
+            {
+                Debug.LogError("[Voxtral] Cannot start capture: WebSocket not connected.");
+                _isCapturing = false;
+                Microphone.End(_micDevice);
+                _micClip = null;
+            }
         }
 
         public async void StopCapturing()
@@ -102,6 +103,8 @@ namespace audio
         private void SendNewSamples()
         {
             if (_micClip == null) return;
+
+            if (!VoxtralWebSocketService.Instance.IsConnected) return;
 
             int currentPos = Microphone.GetPosition(_micDevice);
             if (currentPos < 0) return;
