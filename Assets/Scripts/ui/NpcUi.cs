@@ -194,7 +194,9 @@ public class NpcUi : BaseUI
     public void Init(ref NpcEntity entity)
     {
         trackingEntity = entity;
-        this.OpenUI(null);
+        this.OpenUI(() => { 
+            Invoke(nameof(CloseNpcUi), 6.0f);
+        });
     }
 
     private async void SubmitRequest(string message)
@@ -241,7 +243,6 @@ public class NpcUi : BaseUI
             else if ("close".Equals(streamingResponse.Type) || streamingResponse.Closed)
             {
                 CloseUI();
-                Invoke(nameof(CloseNpcUi), 6.0f);
             }
             else
             {
