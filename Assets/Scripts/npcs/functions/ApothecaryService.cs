@@ -14,9 +14,10 @@ namespace DefaultNamespace.npcs.functions
             "Stamina Elixir - Restores 20 stamina - 25 gold"
         };
         
-        public void inspectPlayer()
+        public string inspectPlayer()
         {
-            throw new System.NotImplementedException();
+            Debug.Log("Inspecting player...");
+            return "Player inspected. He is poisoned";
         }
         
         public override string listItems()
@@ -28,15 +29,15 @@ namespace DefaultNamespace.npcs.functions
         {
             switch (functionName)
             {
-                case "listItems":
+                case "list_medicine":
                     return listItems();
-                case "giveItem":
+                case "give_medicine":
                     if (args.TryGetValue("name", out var name))
                     {
                         return giveItem(name);
                     }
                     return "Error: Missing argument 'name'";
-                case "sellItem":
+                case "sell_medicine":
                     if (args.TryGetValue("name", out var itemName) 
                         && args.TryGetValue("price", out var priceStr) 
                         && int.TryParse(priceStr, out var price))
@@ -44,9 +45,8 @@ namespace DefaultNamespace.npcs.functions
                         return sellItem(itemName, price);
                     }
                     return "Error: Missing or invalid arguments 'name' and 'price'";
-                case "inspectPlayer":
-                    inspectPlayer();
-                    return "Player inspected.";
+                case "inspect_player":
+                    return inspectPlayer();
                 default:
                     return $"Error: Unknown function '{functionName}'";
             }
