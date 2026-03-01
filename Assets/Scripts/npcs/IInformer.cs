@@ -3,7 +3,7 @@
     public interface IInformer
     {
         string listInfo();
-        string sellInfo(int price);
+        string sellInfo(string name, int price);
         string buyInfo(int price);
     }
 }

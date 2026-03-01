@@ -1,11 +1,12 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using npcs;
 using npcs.dto;
 using UnityEngine;
 
 namespace DefaultNamespace.npcs.functions
 {
-    public class SellerService : MonoBehaviour, ISeller
+    public class SellerService : MonoBehaviour, ISeller, INpcFunction
     {
         [SerializeField] protected ItemDto[] availableItems;
         
@@ -35,6 +36,31 @@ namespace DefaultNamespace.npcs.functions
         {
             return "Available items:\n" + string.Join("\n", availableItems.Select(item => item.ToString()));
         }
-        
+
+        public string processFunction(string functionName, IDictionary<string, string> args)
+        {
+            
+            switch (functionName)
+            {
+                case "list_drinks":
+                    return listItems();
+                case "give_drink":
+                    if (args.TryGetValue("name", out var name))
+                    {
+                        return giveItem(name);
+                    }
+                    return "Error: Missing argument 'name'";
+                case "sell_drink":
+                    if (args.TryGetValue("name", out var itemName) 
+                        && args.TryGetValue("price", out var priceStr) 
+                        && int.TryParse(priceStr, out var price))
+                    {
+                        return sellItem(itemName, price);
+                    }
+                    return "Error: Missing or invalid arguments 'name' and 'price'";
+                default:
+                    return $"Error: Unknown function '{functionName}'";
+            }
+        }
     }
 }
