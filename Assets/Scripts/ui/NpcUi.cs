@@ -7,7 +7,6 @@ using UnityEngine.UI;
 public class NpcUi : BaseUI
 {
     [SerializeField] TextMeshProUGUI npcNameMesh;
-    [SerializeField] TextMeshProUGUI npcGoldMesh;
     [SerializeField] Transform playerRequestTransform;
     [SerializeField] Button playerRequestBtn;
     [SerializeField] TMP_InputField playerRequestInputField;
@@ -24,7 +23,7 @@ public class NpcUi : BaseUI
         npcNameMesh.SetText(trackingEntity.Name);
         playerRequestBtn.onClick.AddListener(SubmitRequest);
         playerRequestTransform.gameObject.SetActive(true);
-        npcResponseTransform.gameObject.SetActive(true);
+        npcResponseTransform.gameObject.SetActive(false);
         this.gameObject.SetActive(true);
     }
 
@@ -37,25 +36,19 @@ public class NpcUi : BaseUI
         this.sessionId = null;
     }
 
-    void FixedUpdate()
-    {
-        if (trackingEntity == null) return;
-        npcGoldMesh.SetText("Gold: " + trackingEntity.Gold);
-    }
-
     public void Init(ref NpcEntity entity)
     {
         trackingEntity = entity;
         this.OpenUI(null);
     }
 
-    private async void SubmitRequest()
+    private async void SubmitRequest(string message)
     {
-        Debug.Log("Send to the API: npcid: " + trackingEntity.UUID + " data: " + playerRequestInputField.text);
-
-        string message = playerRequestInputField.text;
-
-        npcResponseText.SetText("");
+        if (npcResponseText != null)
+        {
+            npcResponseText.SetText("");
+        }
+        
         string fullResponse = "";
         
         await NpcApiService.Instance.StreamNpcTalk(trackingEntity.UUID, message, sessionId,response =>
@@ -78,10 +71,12 @@ public class NpcUi : BaseUI
             
             if ("tool_call".Equals(streamingResponse.Type))
             {
-                trackingEntity.functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
+                string result = trackingEntity.functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
+                SubmitRequest("TOOL CALL '"+streamingResponse.ToolName+"' RESPONSE : "+result);
             } else if ("text".Equals(streamingResponse.Type))
             {
                 fullResponse += streamingResponse.Content;
+                npcResponseTransform.gameObject.SetActive(true);
                 npcResponseText.SetText(fullResponse);
             }
             else
@@ -92,6 +87,15 @@ public class NpcUi : BaseUI
         });
         
         Debug.Log("Full NPC response: " + fullResponse);
+    }
 
+    private async void SubmitRequest()
+    {
+        Debug.Log("Send to the API: npcid: " + trackingEntity.UUID + " data: " + playerRequestInputField.text);
+
+        string message = playerRequestInputField.text;
+        playerRequestInputField.text = "";
+        
+        SubmitRequest(message);
     }
 }

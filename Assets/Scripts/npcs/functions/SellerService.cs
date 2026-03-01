@@ -6,17 +6,20 @@ namespace DefaultNamespace.npcs.functions
     {
         public virtual string giveItem(string name)
         {
-            throw new System.NotImplementedException();
+            Debug.Log("GIVE ITEM : "+name);
+            return "GIVEN ITEM : "+name;
         }
 
         public virtual string sellItem(string name, int price)
         {
-            throw new System.NotImplementedException();
+            Debug.Log("SELL ITEM : "+name+" for "+price);
+            return "SOLD ITEM : "+name+" for "+price;
         }
 
         public virtual string listItems()
         {
-            throw new System.NotImplementedException();
+            Debug.Log("LIST ITEMS");
+            return "LISTED ITEMS";
         }
     }
 }

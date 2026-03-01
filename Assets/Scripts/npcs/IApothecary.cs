@@ -2,6 +2,6 @@
 {
     public interface IApothecary : ISeller
     {
-        void inspectPlayer();
+        string inspectPlayer();
     }
 }
