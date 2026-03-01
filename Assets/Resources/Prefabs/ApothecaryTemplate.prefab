@@ -463,3 +463,22 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f8390bcb9e9418a47bf60ff7f7eb9cfe, type: 3}
   m_PrefabInstance: {fileID: 6123774856531813953}
   m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8601914646347012340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 201d69f3186647aca0774bfaf02ad650, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.npcs.functions.ApothecaryService
+  availableItems:
+  - Name: Health Potion
+    Description: Restores 50 HP
+    Price: 10
+  - Name: Mana Potion
+    Description: Restores 30 MP
+    Price: 15
+  - Name: Antidote
+    Description: Cures poison
+    Price: 20
+  - Name: Stamina Elixir
+    Description: Restores 20 stamina
+    Price: 25

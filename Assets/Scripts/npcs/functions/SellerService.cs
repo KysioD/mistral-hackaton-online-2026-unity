@@ -2,6 +2,7 @@
 using System.Linq;
 using npcs;
 using npcs.dto;
+using ui;
 using UnityEngine;
 
 namespace DefaultNamespace.npcs.functions
@@ -22,13 +23,20 @@ namespace DefaultNamespace.npcs.functions
         public virtual string giveItem(string name)
         {
             Debug.Log("GIVE ITEM : "+name);
+            playerEntity.AddToInventory(name, 1);
+            ToastNotificationService.Show($"Received item : {name}");
             return "GIVEN ITEM : "+name;
         }
 
+        /*
+         * Seller sells an item to the player.
+         */
         public virtual string sellItem(string name, int price)
         {
             Debug.Log("SELL ITEM : "+name+" for "+price);
             playerEntity.TransferGoldTo(npcEntity, price);
+            playerEntity.AddToInventory(name, 1);
+            ToastNotificationService.Show($"Bought : {name} (-{price} or)");
             return "SOLD ITEM : "+name+" for "+price;
         }
 
