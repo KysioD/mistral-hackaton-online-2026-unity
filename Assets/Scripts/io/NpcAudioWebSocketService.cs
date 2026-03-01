@@ -12,10 +12,11 @@ using UnityEngine;
 namespace io
 {
     /// <summary>
-    /// WebSocket client for the backend /npc-audio gateway (port 8080).
+    /// WebSocket client for the backend /npc-audio gateway.
+    /// URL is read from AppConfig.NpcAudioBaseUrl + "/npc-audio".
     /// On connect, the server sends { event:"connected", clientId:"uuid" }.
     /// When a talk request is in progress with voice, the server sends
-    /// { type:"audio", content:"base64mp3", format:"mp3" } chunks.
+    /// { type:"audio", content:"base64...", format:"mp3" } chunks.
     /// </summary>
     public class NpcAudioWebSocketService
     {

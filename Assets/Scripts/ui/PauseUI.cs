@@ -22,7 +22,6 @@ public class PauseUI : BaseUI
 
     public override void CloseUI()
     {
-        Debug.Log("Called here?");
         Time.timeScale = 1.0f;
         GameLogic.Paused = false;
         this.gameObject.SetActive(false);

@@ -100,7 +100,6 @@ public class NpcUi : BaseUI
 
         // Connect to the NPC audio WebSocket so the server can push ElevenLabs
         // audio chunks directly to this client in parallel with the text stream.
-        Debug.Log($"[NpcUi] voiceEnabled={voiceEnabled} | npcAudioPlayer={(npcAudioPlayer != null ? "OK" : "NULL ⚠")}");
         if (voiceEnabled)
             ConnectNpcAudioWebSocket();
     }
@@ -155,7 +154,6 @@ public class NpcUi : BaseUI
     private void ConnectNpcAudioWebSocket()
     {
         _npcAudioClientId = null;
-        Debug.Log($"[NpcUi] Connecting to NPC audio WS…");
 
         // Always unsubscribe first to avoid double-registration.
         NpcAudioWebSocketService.Instance.OnClientIdReceived -= OnNpcAudioClientId;
@@ -191,7 +189,6 @@ public class NpcUi : BaseUI
     // Fired from background thread — AccumulateChunk uses a ConcurrentQueue so it is thread-safe.
     private void OnNpcAudioChunk(string base64Mp3)
     {
-        Debug.Log($"[NpcUi] 🔊 Audio chunk received — {base64Mp3.Length} chars | player={(npcAudioPlayer != null ? "OK" : "NULL ⚠")}");
         if (npcAudioPlayer != null)
             npcAudioPlayer.AccumulateChunk(base64Mp3);
     }
@@ -312,7 +309,6 @@ public class NpcUi : BaseUI
         }
 
         string message = _transcriptBuffer.Trim();
-        Debug.Log("RECEIVED MESSAGE FROM VOXTRAL: " + message);
         _transcriptBuffer = "";
         playerRequestInputField.text = "";
 
@@ -342,7 +338,6 @@ public class NpcUi : BaseUI
 
         // Snapshot clientId now: the WS event may update _npcAudioClientId at any time.
         string audioClientId = voiceEnabled ? _npcAudioClientId : null;
-        Debug.Log($"[NpcUi] SubmitRequest — voiceEnabled={voiceEnabled} | wsConnected={NpcAudioWebSocketService.Instance.IsConnected} | clientId={(audioClientId ?? "null ⚠")}");
 
         if (npcResponseText != null)
             npcResponseText.SetText("");
@@ -354,8 +349,6 @@ public class NpcUi : BaseUI
             response =>
             {
                 if (_conversationId != conversationId) return;
-
-                Debug.Log($"NPC {entityName} says: {response}");
 
                 LLMStreamingResponse streamingResponse = JsonConvert.DeserializeObject<LLMStreamingResponse>(response);
 
@@ -407,7 +400,6 @@ public class NpcUi : BaseUI
     private void SubmitRequest()
     {
         if (trackingEntity == null) return;
-        Debug.Log("Send to the API: npcid: " + trackingEntity.UUID + " data: " + playerRequestInputField.text);
 
         string message = playerRequestInputField.text;
         playerRequestInputField.text = "";

@@ -1,16 +1,12 @@
 using DefaultNamespace.npcs.functions;
-using io;
-using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace npcs
 {
     public class NpcBehavior : MonoBehaviour
     {
         [SerializeField] private TextMeshPro entityNameMesh;
-        private MonoBehaviour functionManagerObject;
 
         private NpcEntity entity;
         private Camera playerCam;
@@ -26,13 +22,6 @@ namespace npcs
             npcEntity.functionManager = this.GetComponent<INpcFunction>();
             Spawn();
         }
-        
-        /*void Start()
-        {
-            entity = new NpcEntity();
-            entity.functionManager = this.GetComponent<INpcFunction>();
-            Spawn();
-        }*/
 
         void Update()
         {
@@ -41,7 +30,6 @@ namespace npcs
 
         public void InteractWith()
         {
-
         }
 
         void Spawn()
@@ -51,7 +39,6 @@ namespace npcs
             this.transform.position = new Vector3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
             this.transform.localRotation = Quaternion.Euler(new Vector3(0.0f, spawnCoords.w, 0.0f));
             entityNameMesh.SetText(entity.Name);
-
         }
 
         public ref NpcEntity GetNpcEntity()
@@ -59,7 +46,7 @@ namespace npcs
             return ref entity;
         }
 
-        public async void Talk(string message)
+        public void Talk(string message)
         {
         }
     }

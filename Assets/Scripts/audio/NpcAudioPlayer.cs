@@ -107,7 +107,6 @@ namespace audio
                     total += samplesRead;
                 }
 
-                Debug.Log($"[NpcAudioPlayer] +{total} PCM samples decoded (queue≈{_pcmQueue.Count})");
             }
             catch (Exception e)
             {
