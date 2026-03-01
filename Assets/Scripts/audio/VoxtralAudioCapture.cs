@@ -13,10 +13,6 @@ namespace audio
         public int sampleRate = 16000;
         public int minChunkSamples = 1600;
 
-        [Header("Microphone")]
-        [Tooltip("Nom exact du micro à utiliser. Laisser vide = premier micro du système.")]
-        public string micDeviceOverride = "";
-
         private TMP_Dropdown _micDropdown;
         private const int MicBufferSeconds = 10;
 
@@ -62,9 +58,7 @@ namespace audio
             _isCapturing = true;
             
             var devices = Microphone.devices;
-            _micDevice = !string.IsNullOrEmpty(micDeviceOverride) ? micDeviceOverride
-                        : _micDropdown != null && devices.Length > 0 ? devices[_micDropdown.value]
-                        : devices.Length > 0 ? devices[0]
+            _micDevice = _micDropdown != null && devices.Length > 0 ? devices[_micDropdown.value]
                         : null;
 
             _micClip = Microphone.Start(_micDevice, true, MicBufferSeconds, sampleRate);

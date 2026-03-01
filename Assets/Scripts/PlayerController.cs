@@ -37,6 +37,9 @@ public class PlayerController : MonoBehaviour
             "Inventory:\n" +
             string.Join("\n", entity.Inventory.Keys.Cast<string>())
         );
+        
+        hudController.setInteractTooltipEnabled(Physics.Raycast(camera.transform.position, camera.transform.forward, out RaycastHit hitInfo, interactRange, npcLayer));
+        
         //hudController.SetMagic(entity.MagicLevel);
     }
 

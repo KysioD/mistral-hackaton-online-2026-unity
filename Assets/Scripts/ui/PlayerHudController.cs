@@ -7,6 +7,7 @@ public class PlayerHudController : MonoBehaviour
     [SerializeField] TextMeshProUGUI goldMesh;
     //[SerializeField] TextMeshProUGUI magicMesh;
     [SerializeField] TextMeshProUGUI playeItems;
+    [SerializeField] TextMeshProUGUI interactTooltip;
 
     void Awake()
     {
@@ -26,6 +27,11 @@ public class PlayerHudController : MonoBehaviour
     public void setItems(string items)
     {
         playeItems.SetText(items);
+    }
+
+    public void setInteractTooltipEnabled(bool enabled)
+    {
+        interactTooltip.gameObject.SetActive(enabled);
     }
 
     //public void SetMagic(int magic)

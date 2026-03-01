@@ -59,10 +59,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 201d69f3186647aca0774bfaf02ad650, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.npcs.functions.ApothecaryService
-  availableItems:
-  - Name: Weed
-    Description: Some medical weed
-    Price: 42
+  availableItems: [{Name: Weed, Description: Some medical weed, Price: 42}]
 --- !u!1 &4328483648462064938
 GameObject:
   m_ObjectHideFlags: 0
