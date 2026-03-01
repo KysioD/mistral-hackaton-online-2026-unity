@@ -10,15 +10,18 @@ public class PlayerMovementController : MonoBehaviour
 
     private Camera camera;
     private Rigidbody rigidBody;
+    private AudioPlayer audioPlayer;
 
     private float xRotation, yRotation;
     private bool grounded = true;
     private float lastJumpTime = 0.0f;
+    private float walkSoundCooldown;
 
     void Awake()
     {
         camera = GetComponentInChildren<Camera>();
         rigidBody = GetComponent<Rigidbody>();
+        audioPlayer = FindFirstObjectByType<AudioSource>().GetComponent<AudioPlayer>();
 
         GameLogic.playerInputActions.Player.Jump.performed += Jump;
     }
@@ -49,7 +52,8 @@ public class PlayerMovementController : MonoBehaviour
 
     void FixedUpdate()
     {
-        float moveSpeed = GameLogic.playerInputActions.Player.Sprint.IsPressed() ? sprintSpeed : walkSpeed;
+        bool sprinting = GameLogic.playerInputActions.Player.Sprint.IsPressed();
+        float moveSpeed = sprinting ? sprintSpeed : walkSpeed;
 
         Vector2 moveInputVector = GameLogic.playerInputActions.Player.Move.ReadValue<Vector2>();
         Vector3 velocity = Vector3.zero;
@@ -57,6 +61,12 @@ public class PlayerMovementController : MonoBehaviour
         velocity += moveInputVector.y * transform.forward;
         velocity *= grounded ? moveSpeed : moveSpeed / 2;
         rigidBody.AddForce(velocity, ForceMode.Force);
+
+        if (velocity.sqrMagnitude > 0.01f && walkSoundCooldown <= 0f)
+        {
+            audioPlayer.PlayWalk();
+            walkSoundCooldown = sprinting ? 0.3f : 0.4f;
+        }
     }
 
     void Jump(InputAction.CallbackContext context)

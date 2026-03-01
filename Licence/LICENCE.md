@@ -8,3 +8,4 @@
   - From Retro Medieval Kit by Kenney downloaded at https://kenney.nl/assets/retro-medieval-kit (see `kenney_retro-medieval-kit/Licence.txt`)
   - From Fantasy Town Kit by Kenney downloaded at https://kenney.nl/assets/fantasy-town-kit (see `kenney_fantasy-town-kit_2.0/Licence.txt`)
   - From Modular Village by Keith at Fertile Soil Productions downloaded at https://opengameart.org/content/modular-village (see `modular_village_collection/Licence.txt`)
+- THe gold/item/walking sounds from RPG Audio by Kenney downloaded at https://kenney.nl/assets/rpg-audio (see `kenney_rpg-audio/Licence.txt`)

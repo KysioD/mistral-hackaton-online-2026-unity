@@ -8,11 +8,13 @@ namespace DefaultNamespace.npcs.functions
     {
         protected PlayerEntity playerEntity;
         protected NpcEntity npcEntity;
+        private AudioPlayer audioPlayer;
 
         private void Start()
         {
             playerEntity = FindFirstObjectByType<PlayerController>().entity;
             npcEntity = GetComponent<NpcBehavior>().GetNpcEntity();
+            audioPlayer = FindFirstObjectByType<AudioSource>().GetComponent<AudioPlayer>();
         }
         
         string Fear()
@@ -30,6 +32,7 @@ namespace DefaultNamespace.npcs.functions
         {
             Debug.Log("Steal " + amount + " coins from the player");
             playerEntity.TransferGoldTo(npcEntity, amount);
+            audioPlayer.PlayGold();
             return $"You stole {amount} coins from the player";
         }
         

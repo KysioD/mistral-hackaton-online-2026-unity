@@ -12,11 +12,13 @@ namespace DefaultNamespace.npcs.functions
 
         protected PlayerEntity playerEntity;
         protected NpcEntity npcEntity;
+        private AudioPlayer audioPlayer;
 
         private void Start()
         {
             playerEntity = FindFirstObjectByType<PlayerController>().entity;
             npcEntity = GetComponent<NpcBehavior>().GetNpcEntity();
+            audioPlayer = FindFirstObjectByType<AudioSource>().GetComponent<AudioPlayer>();
         }
         
         public string listInfo()
@@ -28,6 +30,7 @@ namespace DefaultNamespace.npcs.functions
         {
             Debug.Log($"SELL INFO {name} for {price}");
             playerEntity.TransferGoldTo(npcEntity, price);
+            audioPlayer.PlayGold();
             return $"SOLD INFO {name} for {price}";
         }
 
@@ -35,6 +38,7 @@ namespace DefaultNamespace.npcs.functions
         {
             Debug.Log($"BUY INFO for {price}");
             npcEntity.TransferGoldTo(playerEntity, price);
+            audioPlayer.PlayGold();
             return $"BOUGHT INFO for {price}";
         }
 

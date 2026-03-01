@@ -13,17 +13,20 @@ namespace DefaultNamespace.npcs.functions
         
         protected PlayerEntity playerEntity;
         protected NpcEntity npcEntity;
+        private AudioPlayer audioPlayer;
 
         private void Start()
         {
             playerEntity = FindFirstObjectByType<PlayerController>().entity;
-                npcEntity = GetComponent<NpcBehavior>().GetNpcEntity();
+            npcEntity = GetComponent<NpcBehavior>().GetNpcEntity();
+            audioPlayer = FindFirstObjectByType<AudioSource>().GetComponent<AudioPlayer>();
         }
 
         public virtual string giveItem(string name)
         {
             Debug.Log("GIVE ITEM : "+name);
             playerEntity.AddToInventory(name, 1);
+            audioPlayer.PlayItemTrade();
             ToastNotificationService.Show($"Received item : {name}");
             return "GIVEN ITEM : "+name;
         }
@@ -35,6 +38,7 @@ namespace DefaultNamespace.npcs.functions
         {
             Debug.Log("SELL ITEM : "+name+" for "+price);
             playerEntity.TransferGoldTo(npcEntity, price);
+            audioPlayer.PlayGold();
             playerEntity.AddToInventory(name, 1);
             ToastNotificationService.Show($"Bought : {name} (-{price} or)");
             return "SOLD ITEM : "+name+" for "+price;
