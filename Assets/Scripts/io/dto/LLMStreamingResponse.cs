@@ -11,5 +11,6 @@ namespace io
         [JsonProperty("toolName")] public string ToolName { get; set; }
         [JsonProperty("parameters")] public IDictionary<string, string> Parameters { get; set; }
         [JsonProperty("sessionId")] public string SessionId { get; set; }
+        [JsonProperty("closed")] public bool Closed { get; set; }
     }
 }

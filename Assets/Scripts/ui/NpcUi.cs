@@ -30,9 +30,14 @@ public class NpcUi : BaseUI
     public override void CloseUI()
     {
         base.CloseUI();
+        playerRequestBtn.onClick.RemoveListener(SubmitRequest);
+        playerRequestTransform.gameObject.SetActive(false);
+    }
+
+    private void CloseNpcUi()
+    {
         trackingEntity = null;
         this.gameObject.SetActive(false);
-        playerRequestBtn.onClick.RemoveListener(SubmitRequest);
         this.sessionId = null;
     }
 
@@ -68,6 +73,8 @@ public class NpcUi : BaseUI
             {
                 this.sessionId = streamingResponse.SessionId;
             }
+
+           
             
             if ("tool_call".Equals(streamingResponse.Type))
             {
@@ -78,6 +85,16 @@ public class NpcUi : BaseUI
                 fullResponse += streamingResponse.Content;
                 npcResponseTransform.gameObject.SetActive(true);
                 npcResponseText.SetText(fullResponse);
+            }
+            else if ("done".Equals(streamingResponse.Type))
+            {
+                Debug.Log("End of response stream for NPC " + trackingEntity.Name);
+            }
+            else if ("close".Equals(streamingResponse.Type) || streamingResponse.Closed)
+            {
+                // Wait 10s before closing the UI to allow the player to read the final response
+                CloseUI();
+                Invoke(nameof(CloseNpcUi), 6.0f);
             }
             else
             {
