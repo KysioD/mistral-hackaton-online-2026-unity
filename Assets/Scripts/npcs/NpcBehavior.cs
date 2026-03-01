@@ -3,6 +3,7 @@ using io;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace npcs
 {
@@ -12,6 +13,12 @@ namespace npcs
         private MonoBehaviour functionManagerObject;
 
         private NpcEntity entity;
+        private Camera playerCam;
+
+        private void Awake()
+        {
+            playerCam = FindFirstObjectByType<Camera>();
+        }
 
         public void Init(NpcEntity npcEntity)
         {
@@ -29,7 +36,7 @@ namespace npcs
 
         void Update()
         {
-
+            entityNameMesh.transform.forward = playerCam.transform.forward;
         }
 
         public void InteractWith()
@@ -41,7 +48,7 @@ namespace npcs
         {
             this.gameObject.SetActive(true);
             Vector4 spawnCoords = entity.SpawnCoords;
-            //this.transform.position = new Vector3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
+            this.transform.position = new Vector3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
             this.transform.localRotation = Quaternion.Euler(new Vector3(0.0f, spawnCoords.w, 0.0f));
             entityNameMesh.SetText(entity.Name);
 

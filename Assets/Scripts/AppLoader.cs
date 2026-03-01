@@ -10,6 +10,8 @@ namespace DefaultNamespace
 {
     public class AppLoader : MonoBehaviour
     {
+        [SerializeField] private Transform npcContainer;
+        
         private const string GameSceneName = "GameScene";
         
         private async void Start()
@@ -40,7 +42,7 @@ namespace DefaultNamespace
                 GameObject npcPrefab = Resources.Load<GameObject>($"Prefabs/{npcEntity.Prefab}");
                     if (npcPrefab != null)
                     {
-                        GameObject npcInstance = Instantiate(npcPrefab);
+                        GameObject npcInstance = Instantiate(npcPrefab, npcContainer);
                         NpcBehavior npcBehavior = npcInstance.GetComponent<NpcBehavior>();
                         npcBehavior.Init(npcEntity);
                     }
