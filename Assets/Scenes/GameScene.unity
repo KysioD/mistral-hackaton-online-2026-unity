@@ -4409,7 +4409,7 @@ MonoBehaviour:
   voiceBtn: {fileID: 326820068}
   micDropdown: {fileID: 0}
   voiceEnabled: 1
-  npcAudioPlayer: {fileID: 0}
+  npcAudioPlayer: {fileID: 1930332568}
   dialogueCloseDelay: 5
   maxRecordingSeconds: 30
 --- !u!1 &1981129392

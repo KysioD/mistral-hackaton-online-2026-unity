@@ -8,12 +8,11 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-
 public class NpcUi : BaseUI
 {
     private const string AudioButtonTextStart = "Start mic capture";
     private const string AudioButtonTextStop = "Stop mic capture";
-    
+
     [SerializeField] TextMeshProUGUI npcNameMesh;
     [SerializeField] Transform playerRequestTransform;
     [SerializeField] Button playerRequestBtn;
@@ -24,7 +23,8 @@ public class NpcUi : BaseUI
     [SerializeField] private Button voiceBtn;
     [SerializeField] private TMP_Dropdown micDropdown;
 
-    [Header("Voice")]
+    [Header("Voice (ElevenLabs)")]
+    [Tooltip("Toggle in code to enable NPC text-to-speech via ElevenLabs WebSocket.")]
     [SerializeField] private bool voiceEnabled = false;
     [SerializeField] private NpcAudioPlayer npcAudioPlayer;
 
@@ -42,29 +42,35 @@ public class NpcUi : BaseUI
     // Incremented each time a conversation opens, used to discard stale API responses.
     private int _conversationId = 0;
 
+    // clientId assigned by the /npc-audio WebSocket gateway; used to route audio
+    // chunks back to this client over the dedicated WebSocket connection.
+    private string _npcAudioClientId;
+
+    // ── Public API ────────────────────────────────────────────────────────────
+
     public void Init(ref NpcEntity entity)
     {
         // If switching to a different NPC, clear the previous session.
         if (trackingEntity != null && trackingEntity.UUID != entity.UUID)
             sessionId = null;
 
-        // Cancel any pending delayed close before reopening.
         CancelPendingDialogueClose();
 
         trackingEntity = entity;
         OpenUI(null);
     }
-    
+
     public void AudioButtonSetListening(bool isListening)
     {
         if (voiceBtn == null) return;
-
-        voiceBtn.GetComponentInChildren<TextMeshProUGUI>().SetText(isListening ? AudioButtonTextStop : AudioButtonTextStart);
+        voiceBtn.GetComponentInChildren<TextMeshProUGUI>().SetText(
+            isListening ? AudioButtonTextStop : AudioButtonTextStart);
     }
+
+    // ── UI lifecycle ──────────────────────────────────────────────────────────
 
     public override void OpenUI(System.Action closeCb)
     {
-        // Cancel any pending delayed close (player may be reopening within the 5-second window).
         CancelPendingDialogueClose();
         _conversationId++;
 
@@ -91,14 +97,18 @@ public class NpcUi : BaseUI
             voiceBtn.onClick.RemoveListener(ToggleVoiceCapture);
             voiceBtn.onClick.AddListener(ToggleVoiceCapture);
         }
+
+        // Connect to the NPC audio WebSocket so the server can push ElevenLabs
+        // audio chunks directly to this client in parallel with the text stream.
+        Debug.Log($"[NpcUi] voiceEnabled={voiceEnabled} | npcAudioPlayer={(npcAudioPlayer != null ? "OK" : "NULL ⚠")}");
+        if (voiceEnabled)
+            ConnectNpcAudioWebSocket();
     }
 
     public override void CloseUI()
     {
-        // Guard: already closed, nothing to do.
         if (!Opened) return;
 
-        // base.CloseUI() sets Opened = false and restores player controls.
         base.CloseUI();
 
         playerRequestBtn.onClick.RemoveListener(SubmitRequest);
@@ -133,9 +143,60 @@ public class NpcUi : BaseUI
         if (npcAudioPlayer != null)
             npcAudioPlayer.StopAndClear();
 
-        // Keep the dialogue panel visible for a few seconds, then fully hide the UI.
+        // Disconnect the audio WebSocket and unsubscribe its events.
+        if (voiceEnabled)
+            DisconnectNpcAudioWebSocket();
+
         _closeDialogueCoroutine = StartCoroutine(CloseDialogueAfterDelay(dialogueCloseDelay));
     }
+
+    // ── NPC audio WebSocket helpers ───────────────────────────────────────────
+
+    private void ConnectNpcAudioWebSocket()
+    {
+        _npcAudioClientId = null;
+        Debug.Log($"[NpcUi] Connecting to NPC audio WS…");
+
+        // Always unsubscribe first to avoid double-registration.
+        NpcAudioWebSocketService.Instance.OnClientIdReceived -= OnNpcAudioClientId;
+        NpcAudioWebSocketService.Instance.OnAudioChunkReceived -= OnNpcAudioChunk;
+
+        NpcAudioWebSocketService.Instance.OnClientIdReceived += OnNpcAudioClientId;
+        NpcAudioWebSocketService.Instance.OnAudioChunkReceived += OnNpcAudioChunk;
+
+        // Fire-and-forget: the clientId will arrive asynchronously via the event.
+        // If it hasn't arrived by the time the player submits a message, the
+        // HTTP request is sent without clientId and the backend falls back to
+        // streaming audio inline in the HTTP response.
+        _ = NpcAudioWebSocketService.Instance.ConnectAsync();
+    }
+
+    private void DisconnectNpcAudioWebSocket()
+    {
+        NpcAudioWebSocketService.Instance.OnClientIdReceived -= OnNpcAudioClientId;
+        NpcAudioWebSocketService.Instance.OnAudioChunkReceived -= OnNpcAudioChunk;
+
+        _npcAudioClientId = null;
+
+        _ = NpcAudioWebSocketService.Instance.DisconnectAsync();
+    }
+
+    // Fired from background thread — just store the value (string assignment is atomic).
+    private void OnNpcAudioClientId(string clientId)
+    {
+        _npcAudioClientId = clientId;
+        Debug.Log($"[NpcUi] ✅ clientId received: {clientId}");
+    }
+
+    // Fired from background thread — AccumulateChunk uses a ConcurrentQueue so it is thread-safe.
+    private void OnNpcAudioChunk(string base64Mp3)
+    {
+        Debug.Log($"[NpcUi] 🔊 Audio chunk received — {base64Mp3.Length} chars | player={(npcAudioPlayer != null ? "OK" : "NULL ⚠")}");
+        if (npcAudioPlayer != null)
+            npcAudioPlayer.AccumulateChunk(base64Mp3);
+    }
+
+    // ── Dialogue close helpers ────────────────────────────────────────────────
 
     private IEnumerator CloseDialogueAfterDelay(float delay)
     {
@@ -159,6 +220,8 @@ public class NpcUi : BaseUI
         sessionId = null;
         this.gameObject.SetActive(false);
     }
+
+    // ── Voxtral (speech-to-text) ──────────────────────────────────────────────
 
     private void ToggleVoiceCapture()
     {
@@ -265,70 +328,78 @@ public class NpcUi : BaseUI
         SubmitRequest(message);
     }
 
+    // ── NPC talk (HTTP streaming) ─────────────────────────────────────────────
+
     private async void SubmitRequest(string message)
     {
         if (trackingEntity == null) return;
 
-        // Capture conversation-specific values so stale responses from a previous
-        // conversation can be detected and discarded.
         int conversationId = _conversationId;
         string entityUUID = trackingEntity.UUID;
         string entityName = trackingEntity.Name;
         var functionManager = trackingEntity.functionManager;
         string requestSessionId = sessionId;
 
+        // Snapshot clientId now: the WS event may update _npcAudioClientId at any time.
+        string audioClientId = voiceEnabled ? _npcAudioClientId : null;
+        Debug.Log($"[NpcUi] SubmitRequest — voiceEnabled={voiceEnabled} | wsConnected={NpcAudioWebSocketService.Instance.IsConnected} | clientId={(audioClientId ?? "null ⚠")}");
+
         if (npcResponseText != null)
             npcResponseText.SetText("");
 
         string fullResponse = "";
 
-        await NpcApiService.Instance.StreamNpcTalk(entityUUID, message, requestSessionId, response =>
-        {
-            // Discard responses that belong to a previous conversation.
-            if (_conversationId != conversationId) return;
+        await NpcApiService.Instance.StreamNpcTalk(
+            entityUUID, message, requestSessionId,
+            response =>
+            {
+                if (_conversationId != conversationId) return;
 
-            Debug.Log($"NPC {entityName} says: {response}");
+                Debug.Log($"NPC {entityName} says: {response}");
 
-            LLMStreamingResponse streamingResponse = JsonConvert.DeserializeObject<LLMStreamingResponse>(response);
+                LLMStreamingResponse streamingResponse = JsonConvert.DeserializeObject<LLMStreamingResponse>(response);
 
-            if (streamingResponse == null)
-            {
-                Debug.LogError("Failed to deserialize streaming response: " + response);
-                return;
-            }
+                if (streamingResponse == null)
+                {
+                    Debug.LogError("Failed to deserialize streaming response: " + response);
+                    return;
+                }
 
-            if (streamingResponse.SessionId != null)
-                sessionId = streamingResponse.SessionId;
+                if (streamingResponse.SessionId != null)
+                    sessionId = streamingResponse.SessionId;
 
-            if ("tool_call".Equals(streamingResponse.Type))
-            {
-                string result = functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
-                SubmitRequest("TOOL CALL '" + streamingResponse.ToolName + "' RESPONSE : " + result);
-            }
-            else if ("text".Equals(streamingResponse.Type))
-            {
-                fullResponse += streamingResponse.Content;
-                npcResponseTransform.gameObject.SetActive(true);
-                npcResponseText.SetText(fullResponse);
-            }
-            else if ("audio".Equals(streamingResponse.Type))
-            {
-                if (voiceEnabled && npcAudioPlayer != null)
-                    npcAudioPlayer.EnqueueAudio(streamingResponse.Content);
-            }
-            else if ("done".Equals(streamingResponse.Type))
-            {
-                Debug.Log("End of response stream for NPC " + entityName);
-            }
-            else if ("close".Equals(streamingResponse.Type) || streamingResponse.Closed)
-            {
-                CloseUI();
-            }
-            else
-            {
-                Debug.LogError("Received invalid streaming response: " + response);
-            }
-        }, voiceEnabled);
+                if ("tool_call".Equals(streamingResponse.Type))
+                {
+                    string result = functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
+                    SubmitRequest("TOOL CALL '" + streamingResponse.ToolName + "' RESPONSE : " + result);
+                }
+                else if ("text".Equals(streamingResponse.Type))
+                {
+                    fullResponse += streamingResponse.Content;
+                    npcResponseTransform.gameObject.SetActive(true);
+                    npcResponseText.SetText(fullResponse);
+                }
+                else if ("done".Equals(streamingResponse.Type))
+                {
+                    Debug.Log("End of response stream for NPC " + entityName);
+                    // The backend awaits audioListenerDone before sending "done",
+                    // so all WS audio chunks have already arrived on the WS connection.
+                    // SignalDone() tells NpcAudioPlayer to play (or preload) any
+                    // remaining buffered chunks.
+                    if (voiceEnabled && npcAudioPlayer != null)
+                        npcAudioPlayer.SignalDone();
+                }
+                else if ("close".Equals(streamingResponse.Type) || streamingResponse.Closed)
+                {
+                    CloseUI();
+                }
+                else
+                {
+                    Debug.LogError("Received invalid streaming response: " + response);
+                }
+            },
+            voiceEnabled,
+            audioClientId);
 
         Debug.Log("Full NPC response: " + fullResponse);
     }

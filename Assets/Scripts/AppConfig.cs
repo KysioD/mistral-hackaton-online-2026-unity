@@ -7,5 +7,6 @@ namespace DefaultNamespace
     {
         public string BaseUrl;
         public string VoxtralBaseUrl;
+        public string NpcAudioBaseUrl;
     }
 }

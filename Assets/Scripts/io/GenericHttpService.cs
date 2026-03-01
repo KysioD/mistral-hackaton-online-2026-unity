@@ -1,28 +1,28 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using UnityEngine.Networking;
+using System.Threading;
 using System.Threading.Tasks;
 using DefaultNamespace;
 using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace io
 {
     public class GenericHttpService
-    {   
+    {
         private string BaseUrl { get; }
-        
+
         public static readonly GenericHttpService Instance = new GenericHttpService();
 
         private static readonly HttpClient httpClient = new HttpClient();
 
         private GenericHttpService()
         {
-            // Private constructor to prevent instantiation of the singleton class
             var config = Resources.Load<AppConfig>("AppConfig");
             if (config != null && !string.IsNullOrEmpty(config.BaseUrl))
             {
@@ -33,7 +33,7 @@ namespace io
                 Debug.LogWarning("AppConfig not found or BaseUrl is empty. Using default BaseUrl.");
             }
         }
-        
+
         public async Task<T> GetAsync<T>(string endpoint, Dictionary<string, string> queryParams = null)
         {
             string url = $"{BaseUrl}/{endpoint}";
@@ -48,7 +48,7 @@ namespace io
 
             var operation = request.SendWebRequest();
             while (!operation.isDone) await Task.Yield();
-            
+
             if (request.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError($"GET ERROR ({url}): {request.error}");
@@ -57,50 +57,61 @@ namespace io
 
             return JsonConvert.DeserializeObject<T>(request.downloadHandler.text);
         }
-        
-        public async Task StreamPostAsync(string endpoint, string message, string sessionId, Action<string> onChunkReceived, bool voiceEnabled = false)
+
+        public async Task StreamPostAsync(
+            string endpoint,
+            string message,
+            string sessionId,
+            Action<string> onChunkReceived,
+            bool voiceEnabled = false,
+            string clientId = null)
         {
             string url = $"{BaseUrl}/{endpoint}";
             if (voiceEnabled)
                 url += "?voice=true";
 
-            try
+            // Capture the Unity main-thread SynchronizationContext NOW, before any
+            // ConfigureAwait(false) switches us onto a thread-pool thread.
+            // All onChunkReceived calls will be posted back through this context so
+            // Unity API calls (SetText, SetActive, …) are always on the main thread.
+            var unitySyncCtx = SynchronizationContext.Current;
+
+            var payload = new { message, sessionId, clientId };
+            string jsonBody = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
             {
-                // 1. On crée le payload avec l'objet anonyme (nom de variable "message" attendu par ton API)
-                var payload = new { message = message, sessionId = sessionId };
-                
-                string jsonBody = JsonConvert.SerializeObject(payload);
-        
-                // 2. On prépare le contenu au format JSON
-                var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+                NullValueHandling = NullValueHandling.Ignore
+            });
 
-                // 3. On construit la requête POST
-                using var request = new HttpRequestMessage(HttpMethod.Post, url)
-                {
-                    Content = content,
-                };
+            var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
 
-                // 4. On l'envoie avec l'option magique pour le streaming
-                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                response.EnsureSuccessStatusCode();
+            // Send on a thread-pool thread — ConfigureAwait(false) prevents resuming
+            // on the Unity main thread, so the read loop never blocks it.
+            using var response = await httpClient
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
+                .ConfigureAwait(false);
 
-                // 5. On lit le flux au fur et à mesure
-                await using var stream = await response.Content.ReadAsStreamAsync();
-                using var reader = new StreamReader(stream);
+            response.EnsureSuccessStatusCode();
 
-                while (!reader.EndOfStream)
-                {
-                    string chunk = await reader.ReadLineAsync();
+            await using var stream = await response.Content
+                .ReadAsStreamAsync()
+                .ConfigureAwait(false);
 
-                    if (!string.IsNullOrWhiteSpace(chunk))
-                    {
-                        onChunkReceived?.Invoke(chunk);
-                    }
-                }
-            } 
-            catch (Exception ex)
+            using var reader = new StreamReader(stream);
+
+            while (!reader.EndOfStream)
             {
-                throw ex;
+                // Read on the thread-pool thread — does not touch the main thread.
+                string chunk = await reader.ReadLineAsync().ConfigureAwait(false);
+
+                if (string.IsNullOrWhiteSpace(chunk)) continue;
+
+                // Dispatch callback to the Unity main thread so callers can safely
+                // touch GameObjects, UI elements, etc.
+                if (unitySyncCtx != null)
+                    unitySyncCtx.Post(_ => onChunkReceived?.Invoke(chunk), null);
+                else
+                    onChunkReceived?.Invoke(chunk); // fallback (e.g. unit tests)
             }
         }
     }
