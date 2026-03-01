@@ -61,7 +61,8 @@ public class PlayerMovementController : MonoBehaviour
         velocity += moveInputVector.y * transform.forward;
         velocity *= grounded ? moveSpeed : moveSpeed / 2;
         rigidBody.AddForce(velocity, ForceMode.Force);
-
+        walkSoundCooldown -= Time.fixedDeltaTime;
+        
         if (velocity.sqrMagnitude > 0.01f && walkSoundCooldown <= 0f)
         {
             audioPlayer.PlayWalk();

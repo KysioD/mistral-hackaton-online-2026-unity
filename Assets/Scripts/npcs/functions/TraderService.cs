@@ -44,9 +44,9 @@ namespace DefaultNamespace.npcs.functions
         {
             switch (functionName)
             {
-                case "listPlayerItems":
+                case "list_player_items":
                     return ListPlayerItems();
-                case "buyItem":
+                case "buy_item":
                     if (args.TryGetValue("name", out string name) && args.TryGetValue("price", out string priceStr) && int.TryParse(priceStr, out int price))
                     {
                         return BuyItem(name, price);
@@ -64,8 +64,8 @@ namespace DefaultNamespace.npcs.functions
         {
             return new List<string>
             {
-                "listPlayerItems",
-                "buyItem"
+                "list_player_items",
+                "buy_item"
             };
         }
     }
