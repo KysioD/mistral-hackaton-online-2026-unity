@@ -8,22 +8,12 @@ namespace DefaultNamespace.npcs.functions
 {
     public class ApothecaryService : SellerService, IApothecary, INpcFunction
     {
+        
         public string inspectPlayer()
         {
             Debug.Log("Inspecting player...");
             string response = $"Player inspected; Health: {playerEntity.Health}, Statuses: {string.Join(", ", playerEntity.GetStatuses())}";
             return response;
-        }
-
-        public override ItemDto[] getAvailableItems()
-        {
-            return new ItemDto[]
-            {
-                new ItemDto { Name = "Health Potion", Description = "Restores 50 HP", Price = 10 },
-                new ItemDto { Name = "Mana Potion", Description = "Restores 30 MP", Price = 15 },
-                new ItemDto { Name = "Antidote", Description = "Cures poison", Price = 20 },
-                new ItemDto { Name = "Stamina Elixir", Description = "Restores 20 stamina", Price = 25 }
-            };
         }
 
         string ISeller.giveItem(string name)

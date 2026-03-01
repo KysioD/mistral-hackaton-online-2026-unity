@@ -383,3 +383,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 201d69f3186647aca0774bfaf02ad650, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.npcs.functions.ApothecaryService
+  availableItems: []

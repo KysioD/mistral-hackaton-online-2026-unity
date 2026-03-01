@@ -7,6 +7,8 @@ namespace DefaultNamespace.npcs.functions
 {
     public class SellerService : MonoBehaviour, ISeller
     {
+        [SerializeField] protected ItemDto[] availableItems;
+        
         protected PlayerEntity playerEntity;
         protected NpcEntity npcEntity;
 
@@ -31,12 +33,8 @@ namespace DefaultNamespace.npcs.functions
 
         public virtual string listItems()
         {
-            return "Available items:\n" + string.Join("\n", getAvailableItems().Select(item => item.ToString()));
+            return "Available items:\n" + string.Join("\n", availableItems.Select(item => item.ToString()));
         }
         
-        public virtual ItemDto[] getAvailableItems()
-        {
-            return new ItemDto[] {};
-        }
     }
 }

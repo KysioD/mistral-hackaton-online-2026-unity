@@ -1,10 +1,11 @@
 ﻿namespace npcs.dto
 {
+    [System.Serializable]
     public class ItemDto
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public int Price { get; set; }
+        public string Name;
+        public string Description;
+        public int Price;
 
         public override string ToString()
         {
