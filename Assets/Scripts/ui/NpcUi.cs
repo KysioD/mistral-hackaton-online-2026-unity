@@ -66,7 +66,7 @@ public class NpcUi : BaseUI
 
         this.gameObject.SetActive(true);
 
-        voztralCapture.OnTranscriptReceived -= HandleVoxtralResponse;
+        voxtralCapture.OnTranscriptReceived -= HandleVoxtralResponse;
         voxtralCapture.OnTranscriptReceived += HandleVoxtralResponse;
         voxtralCapture.SetMicDropdown(micDropdown);
         _transcriptBuffer = "";
