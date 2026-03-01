@@ -30,9 +30,9 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        hudController.SetHealth(entity.Health);
+        //hudController.SetHealth(entity.Health);
         hudController.SetGold(entity.Gold);
-        hudController.SetMagic(entity.MagicLevel);
+        //hudController.SetMagic(entity.MagicLevel);
     }
 
     void Interact(InputAction.CallbackContext context)
