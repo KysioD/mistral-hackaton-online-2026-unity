@@ -77,3 +77,12 @@ sequenceDiagram
         NPC-->>Player: Display response
     end
 ```
+
+### In-game controls
+**Note:** the keybindings adapt to the keyboard layout. The described keyboard layout is for the US QWERTY layout. There is also support for game controllers. The layout is for the Xbox Series X/S controllers.
+- Move: WASD or Left Stick
+- Look around: Mouse or Right Stick
+- Jump: Space or A
+- Sprint: Left Shift or Left Stick Press
+- Interact: E or Y
+- Pause/Close UI: Esc or Start
