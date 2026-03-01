@@ -8,8 +8,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 public class NpcUi : BaseUI
 {
+    private const string AudioButtonTextStart = "Start mic capture";
+    private const string AudioButtonTextStop = "Stop mic capture";
+    
     [SerializeField] TextMeshProUGUI npcNameMesh;
     [SerializeField] Transform playerRequestTransform;
     [SerializeField] Button playerRequestBtn;
@@ -19,6 +23,10 @@ public class NpcUi : BaseUI
     [SerializeField] private VoxtralAudioCapture voxtralCapture;
     [SerializeField] private Button voiceBtn;
     [SerializeField] private TMP_Dropdown micDropdown;
+
+    [Header("Voice")]
+    [SerializeField] private bool voiceEnabled = false;
+    [SerializeField] private NpcAudioPlayer npcAudioPlayer;
 
     [SerializeField] private float dialogueCloseDelay = 5.0f;
     [SerializeField] private float maxRecordingSeconds = 30f;
@@ -45,6 +53,13 @@ public class NpcUi : BaseUI
 
         trackingEntity = entity;
         OpenUI(null);
+    }
+    
+    public void AudioButtonSetListening(bool isListening)
+    {
+        if (voiceBtn == null) return;
+
+        voiceBtn.GetComponentInChildren<TextMeshProUGUI>().SetText(isListening ? AudioButtonTextStop : AudioButtonTextStart);
     }
 
     public override void OpenUI(System.Action closeCb)
@@ -111,8 +126,12 @@ public class NpcUi : BaseUI
         if (_isRecording)
         {
             voxtralCapture.StopCapturing();
+            AudioButtonSetListening(false);
             _isRecording = false;
         }
+
+        if (npcAudioPlayer != null)
+            npcAudioPlayer.StopAndClear();
 
         // Keep the dialogue panel visible for a few seconds, then fully hide the UI.
         _closeDialogueCoroutine = StartCoroutine(CloseDialogueAfterDelay(dialogueCloseDelay));
@@ -150,6 +169,7 @@ public class NpcUi : BaseUI
         else
         {
             voxtralCapture.StartCapturing();
+            AudioButtonSetListening(true);
             _isRecording = true;
             _recordingTimeoutCoroutine = StartCoroutine(RecordingTimeoutCoroutine());
         }
@@ -236,6 +256,7 @@ public class NpcUi : BaseUI
         if (_isRecording)
         {
             voxtralCapture.StopCapturing();
+            AudioButtonSetListening(false);
             _isRecording = false;
         }
 
@@ -290,6 +311,11 @@ public class NpcUi : BaseUI
                 npcResponseTransform.gameObject.SetActive(true);
                 npcResponseText.SetText(fullResponse);
             }
+            else if ("audio".Equals(streamingResponse.Type))
+            {
+                if (voiceEnabled && npcAudioPlayer != null)
+                    npcAudioPlayer.EnqueueAudio(streamingResponse.Content);
+            }
             else if ("done".Equals(streamingResponse.Type))
             {
                 Debug.Log("End of response stream for NPC " + entityName);
@@ -302,7 +328,7 @@ public class NpcUi : BaseUI
             {
                 Debug.LogError("Received invalid streaming response: " + response);
             }
-        });
+        }, voiceEnabled);
 
         Debug.Log("Full NPC response: " + fullResponse);
     }

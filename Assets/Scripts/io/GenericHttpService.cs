@@ -58,9 +58,11 @@ namespace io
             return JsonConvert.DeserializeObject<T>(request.downloadHandler.text);
         }
         
-        public async Task StreamPostAsync(string endpoint, string message, string sessionId, Action<string> onChunkReceived)
+        public async Task StreamPostAsync(string endpoint, string message, string sessionId, Action<string> onChunkReceived, bool voiceEnabled = false)
         {
             string url = $"{BaseUrl}/{endpoint}";
+            if (voiceEnabled)
+                url += "?voice=true";
 
             try
             {
