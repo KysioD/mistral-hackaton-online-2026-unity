@@ -51,14 +51,17 @@ namespace DefaultNamespace.npcs.functions
             switch (functionName)
             {
                 case "list_drinks":
+                    case "list_items":
                     return listItems();
                 case "give_drink":
+                    case "give_item":
                     if (args.TryGetValue("name", out var name))
                     {
                         return giveItem(name);
                     }
                     return "Error: Missing argument 'name'";
                 case "sell_drink":
+                    case "sell_item":
                     if (args.TryGetValue("name", out var itemName) 
                         && args.TryGetValue("price", out var priceStr) 
                         && int.TryParse(priceStr, out var price))
@@ -77,7 +80,10 @@ namespace DefaultNamespace.npcs.functions
             {
                 "list_drinks",
                 "give_drink",
-                "sell_drink"
+                "sell_drink",
+                "list_items",
+                "give_item",
+                "sell_item"
             };
         }
     }
