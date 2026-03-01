@@ -1,6 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using audio;
+using DefaultNamespace.npcs.functions;
 using io;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -42,6 +45,9 @@ public class NpcUi : BaseUI
     // Incremented each time a conversation opens, used to discard stale API responses.
     private int _conversationId = 0;
 
+    // Cancelled on CloseUI to abort any in-flight HTTP stream immediately.
+    private CancellationTokenSource _streamCts;
+
     // clientId assigned by the /npc-audio WebSocket gateway; used to route audio
     // chunks back to this client over the dedicated WebSocket connection.
     private string _npcAudioClientId;
@@ -73,6 +79,11 @@ public class NpcUi : BaseUI
     {
         CancelPendingDialogueClose();
         _conversationId++;
+
+        // Cancel any lingering HTTP stream from the previous conversation.
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
+        _streamCts = new CancellationTokenSource();
 
         base.OpenUI(closeCb);
 
@@ -141,6 +152,9 @@ public class NpcUi : BaseUI
 
         if (npcAudioPlayer != null)
             npcAudioPlayer.StopAndClear();
+
+        // Force-close the in-flight HTTP stream (ElevenLabs 20s timeout workaround).
+        _streamCts?.Cancel();
 
         // Disconnect the audio WebSocket and unsubscribe its events.
         if (voiceEnabled)
@@ -333,7 +347,7 @@ public class NpcUi : BaseUI
         int conversationId = _conversationId;
         string entityUUID = trackingEntity.UUID;
         string entityName = trackingEntity.Name;
-        var functionManager = trackingEntity.functionManager;
+        List<INpcFunction> functionManagers = trackingEntity.functionManager;
         string requestSessionId = sessionId;
 
         // Snapshot clientId now: the WS event may update _npcAudioClientId at any time.
@@ -343,6 +357,8 @@ public class NpcUi : BaseUI
             npcResponseText.SetText("");
 
         string fullResponse = "";
+
+        var streamToken = _streamCts?.Token ?? CancellationToken.None;
 
         await NpcApiService.Instance.StreamNpcTalk(
             entityUUID, message, requestSessionId,
@@ -363,7 +379,13 @@ public class NpcUi : BaseUI
 
                 if ("tool_call".Equals(streamingResponse.Type))
                 {
-                    string result = functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
+                    var selectedFunctionManager = functionManagers.Find(fn => fn.FunctionsList().Contains(streamingResponse.ToolName));
+                    if (selectedFunctionManager == null)
+                    {
+                        Debug.LogError("No function manager found for tool: " + streamingResponse.ToolName);
+                        return;
+                    }
+                    string result = selectedFunctionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
                     SubmitRequest("TOOL CALL '" + streamingResponse.ToolName + "' RESPONSE : " + result);
                 }
                 else if ("text".Equals(streamingResponse.Type))
@@ -392,7 +414,8 @@ public class NpcUi : BaseUI
                 }
             },
             voiceEnabled,
-            audioClientId);
+            audioClientId,
+            streamToken);
 
         Debug.Log("Full NPC response: " + fullResponse);
     }

@@ -70,5 +70,15 @@ namespace DefaultNamespace.npcs.functions
                     return $"Error: Unknown function '{functionName}'";
             }
         }
+
+        public List<string> FunctionsList()
+        {
+            return new List<string>
+            {
+                "list_drinks",
+                "give_drink",
+                "sell_drink"
+            };
+        }
     }
 }

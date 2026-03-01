@@ -34,10 +34,10 @@ namespace io
             return await GenericHttpService.Instance.GetAsync<NpcDto>(endpint);
         }
 
-        public async Task StreamNpcTalk(string npcId, string playerMessage, string sessionId, System.Action<string> onChunkReceived, bool voiceEnabled = false, string clientId = null)
+        public async Task StreamNpcTalk(string npcId, string playerMessage, string sessionId, System.Action<string> onChunkReceived, bool voiceEnabled = false, string clientId = null, System.Threading.CancellationToken cancellationToken = default)
         {
             string endpoint = $"npcs/{npcId}/talk";
-            await GenericHttpService.Instance.StreamPostAsync(endpoint, playerMessage, sessionId, onChunkReceived, voiceEnabled, clientId);
+            await GenericHttpService.Instance.StreamPostAsync(endpoint, playerMessage, sessionId, onChunkReceived, voiceEnabled, clientId, cancellationToken);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DefaultNamespace.npcs.functions;
 using TMPro;
 using UnityEngine;
@@ -19,7 +20,7 @@ namespace npcs
         public void Init(NpcEntity npcEntity)
         {
             entity = npcEntity;
-            npcEntity.functionManager = this.GetComponent<INpcFunction>();
+            npcEntity.functionManager = new List<INpcFunction>(GetComponents<INpcFunction>());
             Spawn();
         }
 

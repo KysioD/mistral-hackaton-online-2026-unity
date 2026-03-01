@@ -54,5 +54,15 @@ namespace DefaultNamespace.npcs.functions
                     return $"Unknown function: {functionName}";
             }
         }
+
+        public List<string> FunctionsList()
+        {
+            return new List<string>
+            {
+                "fear",
+                "list_player_coins",
+                "steal_coins"
+            };
+        }
     }
 }

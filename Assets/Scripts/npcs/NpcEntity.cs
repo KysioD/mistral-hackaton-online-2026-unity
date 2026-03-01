@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DefaultNamespace.npcs.functions;
 using UnityEngine;
 
@@ -7,5 +8,5 @@ public class NpcEntity : AbstractEntity
     public string Name { get; set; }
     public string Prefab { get; set; }
     public Vector4 SpawnCoords { get; set; } = Vector4.zero;
-    public INpcFunction functionManager { get; set; }
+    public List<INpcFunction> functionManager { get; set; }
 }

@@ -64,7 +64,8 @@ namespace io
             string sessionId,
             Action<string> onChunkReceived,
             bool voiceEnabled = false,
-            string clientId = null)
+            string clientId = null,
+            CancellationToken cancellationToken = default)
         {
             string url = $"{BaseUrl}/{endpoint}";
             if (voiceEnabled)
@@ -88,7 +89,7 @@ namespace io
             // Send on a thread-pool thread — ConfigureAwait(false) prevents resuming
             // on the Unity main thread, so the read loop never blocks it.
             using var response = await httpClient
-                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
@@ -99,20 +100,33 @@ namespace io
 
             using var reader = new StreamReader(stream);
 
-            while (!reader.EndOfStream)
+            // When the token is cancelled, dispose the response to unblock ReadLineAsync.
+            // (ReadLineAsync has no CancellationToken overload in .NET Standard 2.1.)
+            using var reg = cancellationToken.Register(() =>
             {
-                // Read on the thread-pool thread — does not touch the main thread.
-                string chunk = await reader.ReadLineAsync().ConfigureAwait(false);
+                try { response.Dispose(); } catch { }
+            });
 
-                if (string.IsNullOrWhiteSpace(chunk)) continue;
+            try
+            {
+                while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
+                {
+                    // Read on the thread-pool thread — does not touch the main thread.
+                    string chunk = await reader.ReadLineAsync().ConfigureAwait(false);
 
-                // Dispatch callback to the Unity main thread so callers can safely
-                // touch GameObjects, UI elements, etc.
-                if (unitySyncCtx != null)
-                    unitySyncCtx.Post(_ => onChunkReceived?.Invoke(chunk), null);
-                else
-                    onChunkReceived?.Invoke(chunk); // fallback (e.g. unit tests)
+                    if (string.IsNullOrWhiteSpace(chunk)) continue;
+
+                    // Dispatch callback to the Unity main thread so callers can safely
+                    // touch GameObjects, UI elements, etc.
+                    if (unitySyncCtx != null)
+                        unitySyncCtx.Post(_ => onChunkReceived?.Invoke(chunk), null);
+                    else
+                        onChunkReceived?.Invoke(chunk); // fallback (e.g. unit tests)
+                }
             }
+            catch (OperationCanceledException) { }
+            catch (IOException) when (cancellationToken.IsCancellationRequested) { }
+            catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested) { }
         }
     }
 }

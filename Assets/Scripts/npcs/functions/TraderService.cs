@@ -59,5 +59,14 @@ namespace DefaultNamespace.npcs.functions
                     return $"Function {functionName} not found in TraderService";
             }
         }
+
+        public List<string> FunctionsList()
+        {
+            return new List<string>
+            {
+                "listPlayerItems",
+                "buyItem"
+            };
+        }
     }
 }
