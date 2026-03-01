@@ -1,5 +1,8 @@
+using System.IO;
+using audio;
 using io;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,19 +15,36 @@ public class NpcUi : BaseUI
     [SerializeField] TMP_InputField playerRequestInputField;
     [SerializeField] Transform npcResponseTransform;
     [SerializeField] TextMeshProUGUI npcResponseText;
+    [SerializeField] private VoxtralAudioCapture voxtralCapture;
+    [SerializeField] private Button voiceBtn;
+    [SerializeField] private TMP_Dropdown micDropdown;
 
     private NpcEntity trackingEntity;
     private string sessionId;
+    private bool _isRecording;
+    private string _transcriptBuffer = "";
+    private Coroutine _debounceCoroutine;
 
     public override void OpenUI(System.Action closeCb)
     {
         base.OpenUI(closeCb);
 
         npcNameMesh.SetText(trackingEntity.Name);
+        playerRequestBtn.onClick.RemoveListener(SubmitRequest);
         playerRequestBtn.onClick.AddListener(SubmitRequest);
         playerRequestTransform.gameObject.SetActive(true);
         npcResponseTransform.gameObject.SetActive(false);
         this.gameObject.SetActive(true);
+        voxtralCapture.OnTranscriptReceived -= HandleVoxtralResponse;
+        voxtralCapture.OnTranscriptReceived += HandleVoxtralResponse;
+        voxtralCapture.SetMicDropdown(micDropdown);
+        _transcriptBuffer = "";
+
+        if (voiceBtn != null)
+        {
+            voiceBtn.onClick.RemoveListener(ToggleVoiceCapture);
+            voiceBtn.onClick.AddListener(ToggleVoiceCapture);
+        }
     }
 
     public override void CloseUI()
@@ -32,6 +52,36 @@ public class NpcUi : BaseUI
         base.CloseUI();
         playerRequestBtn.onClick.RemoveListener(SubmitRequest);
         playerRequestTransform.gameObject.SetActive(false);
+        voxtralCapture.OnTranscriptReceived -= HandleVoxtralResponse;
+
+        if (voiceBtn != null)
+            voiceBtn.onClick.RemoveListener(ToggleVoiceCapture);
+
+        if (_debounceCoroutine != null)
+        {
+            StopCoroutine(_debounceCoroutine);
+            _debounceCoroutine = null;
+        }
+        _transcriptBuffer = "";
+
+        if (_isRecording)
+        {
+            voxtralCapture.StopCapturing();
+            _isRecording = false;
+        }
+    }
+
+    private void ToggleVoiceCapture()
+    {
+        if (_isRecording)
+        {
+            FlushTranscript();
+        }
+        else
+        {
+            voxtralCapture.StartCapturing();
+            _isRecording = true;
+        }
     }
 
     private void CloseNpcUi()
@@ -39,6 +89,73 @@ public class NpcUi : BaseUI
         trackingEntity = null;
         this.gameObject.SetActive(false);
         this.sessionId = null;
+    }
+
+    private void HandleVoxtralResponse(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return;
+
+        using var reader = new JsonTextReader(new StringReader(json));
+        reader.SupportMultipleContent = true;
+
+        while (reader.Read())
+        {
+            var obj = JObject.Load(reader);
+            string evt = obj["event"]?.Value<string>();
+
+            if (evt == "session_ready") continue;
+
+            if (evt == "text_response")
+            {
+                string text = obj["data"]?["text"]?.Value<string>();
+                bool isFinal = obj["data"]?["isFinal"]?.Value<bool>() ?? false;
+
+                if (string.IsNullOrEmpty(text)) continue;
+
+                _transcriptBuffer += text;
+                playerRequestInputField.text = _transcriptBuffer;
+
+                if (isFinal)
+                {
+                    FlushTranscript();
+                    return;
+                }
+
+                if (_debounceCoroutine != null)
+                    StopCoroutine(_debounceCoroutine);
+                _debounceCoroutine = StartCoroutine(SubmitTranscriptAfterDelay(1.5f));
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator SubmitTranscriptAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        FlushTranscript();
+    }
+
+    private void FlushTranscript()
+    {
+        if (_debounceCoroutine != null)
+        {
+            StopCoroutine(_debounceCoroutine);
+            _debounceCoroutine = null;
+        }
+
+        string message = _transcriptBuffer.Trim();
+        Debug.Log("RECEIVED MESSAGE FROM VOXTRAL: " + message);
+        _transcriptBuffer = "";
+        playerRequestInputField.text = "";
+
+        if (_isRecording)
+        {
+            voxtralCapture.StopCapturing();
+            _isRecording = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(message)) return;
+
+        SubmitRequest(message);
     }
 
     public void Init(ref NpcEntity entity)
@@ -59,28 +176,26 @@ public class NpcUi : BaseUI
         await NpcApiService.Instance.StreamNpcTalk(trackingEntity.UUID, message, sessionId,response =>
         {
             Debug.Log($"NPC {trackingEntity.Name} says: {response}");
-            
-            // Map the response to the LLMStreamingResponse dto
+
             LLMStreamingResponse streamingResponse = JsonConvert.DeserializeObject<LLMStreamingResponse>(response);
-            
+
             if (streamingResponse == null)
             {
                 Debug.LogError("Failed to deserialize streaming response: " + response);
                 return;
             }
-            
+
             if (streamingResponse.SessionId != null)
             {
                 this.sessionId = streamingResponse.SessionId;
             }
 
-           
-            
             if ("tool_call".Equals(streamingResponse.Type))
             {
                 string result = trackingEntity.functionManager.processFunction(streamingResponse.ToolName, streamingResponse.Parameters);
                 SubmitRequest("TOOL CALL '"+streamingResponse.ToolName+"' RESPONSE : "+result);
-            } else if ("text".Equals(streamingResponse.Type))
+            }
+            else if ("text".Equals(streamingResponse.Type))
             {
                 fullResponse += streamingResponse.Content;
                 npcResponseTransform.gameObject.SetActive(true);
@@ -92,7 +207,6 @@ public class NpcUi : BaseUI
             }
             else if ("close".Equals(streamingResponse.Type) || streamingResponse.Closed)
             {
-                // Wait 10s before closing the UI to allow the player to read the final response
                 CloseUI();
                 Invoke(nameof(CloseNpcUi), 6.0f);
             }
@@ -100,9 +214,8 @@ public class NpcUi : BaseUI
             {
                 Debug.LogError("Received invalid streaming response: " + response);
             }
-
         });
-        
+
         Debug.Log("Full NPC response: " + fullResponse);
     }
 

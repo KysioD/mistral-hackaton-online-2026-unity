@@ -6,5 +6,6 @@ namespace DefaultNamespace
     public class AppConfig : ScriptableObject
     {
         public string BaseUrl;
+        public string VoxtralBaseUrl;
     }
 }

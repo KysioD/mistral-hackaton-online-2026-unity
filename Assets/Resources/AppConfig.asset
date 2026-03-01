@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: AppConfig
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.AppConfig
   BaseUrl: http://localhost:3001
+  VoxtralBaseUrl: ws://localhost:8076
