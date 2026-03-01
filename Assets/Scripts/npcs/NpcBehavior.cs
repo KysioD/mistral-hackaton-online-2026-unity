@@ -12,13 +12,20 @@ namespace npcs
         private MonoBehaviour functionManagerObject;
 
         private NpcEntity entity;
+
+        public void Init(NpcEntity npcEntity)
+        {
+            entity = npcEntity;
+            npcEntity.functionManager = this.GetComponent<INpcFunction>();
+            Spawn();
+        }
         
-        void Start()
+        /*void Start()
         {
             entity = new NpcEntity();
             entity.functionManager = this.GetComponent<INpcFunction>();
             Spawn();
-        }
+        }*/
 
         void Update()
         {
