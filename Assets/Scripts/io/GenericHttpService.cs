@@ -98,7 +98,7 @@ namespace io
             } 
             catch (Exception ex)
             {
-                Debug.LogError($"Stream POST ERROR ({url}): {ex.Message}");
+                throw ex;
             }
         }
     }

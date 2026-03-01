@@ -41,6 +41,6 @@ public abstract class AbstractEntity
 
     public Dictionary<EntityStatus.EType, EntityStatus> GetStatuses()
     {
-        return entityStatuses;
+        return entityStatuses ?? new Dictionary<EntityStatus.EType, EntityStatus>();
     }
 }

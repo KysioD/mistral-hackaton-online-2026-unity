@@ -195,7 +195,7 @@ public class NpcUi : BaseUI
     {
         trackingEntity = entity;
         this.OpenUI(() => { 
-            Invoke(nameof(CloseNpcUi), 6.0f);
+            Invoke(nameof(CloseNpcUi), 5.0f);
         });
     }
 

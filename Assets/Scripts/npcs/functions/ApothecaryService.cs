@@ -1,28 +1,39 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using npcs.dto;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace DefaultNamespace.npcs.functions
 {
     public class ApothecaryService : SellerService, IApothecary, INpcFunction
     {
-        
-        // Name, description and price of the available medications
-        private readonly string[] medications = {
-            "Health Potion - Restores 50 HP - 10 gold",
-            "Mana Potion - Restores 30 MP - 15 gold",
-            "Antidote - Cures poison - 20 gold",
-            "Stamina Elixir - Restores 20 stamina - 25 gold"
-        };
-        
         public string inspectPlayer()
         {
             Debug.Log("Inspecting player...");
-            return "Player inspected. He is poisoned";
+            string response = $"Player inspected; Health: {playerEntity.Health}, Statuses: {string.Join(", ", playerEntity.GetStatuses())}";
+            return response;
         }
-        
-        public override string listItems()
+
+        public override ItemDto[] getAvailableItems()
         {
-            return string.Join("\n", medications);
+            return new ItemDto[]
+            {
+                new ItemDto { Name = "Health Potion", Description = "Restores 50 HP", Price = 10 },
+                new ItemDto { Name = "Mana Potion", Description = "Restores 30 MP", Price = 15 },
+                new ItemDto { Name = "Antidote", Description = "Cures poison", Price = 20 },
+                new ItemDto { Name = "Stamina Elixir", Description = "Restores 20 stamina", Price = 25 }
+            };
+        }
+
+        string ISeller.giveItem(string name)
+        {
+            return giveItem(name);
+        }
+
+        string ISeller.sellItem(string name, int price)
+        {
+            return sellItem(name, price);
         }
 
         public string processFunction(string functionName, IDictionary<string, string> args)

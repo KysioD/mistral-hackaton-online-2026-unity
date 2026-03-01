@@ -1,9 +1,21 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using npcs;
+using npcs.dto;
+using UnityEngine;
 
 namespace DefaultNamespace.npcs.functions
 {
     public class SellerService : MonoBehaviour, ISeller
     {
+        protected PlayerEntity playerEntity;
+        protected NpcEntity npcEntity;
+
+        private void Start()
+        {
+            playerEntity = FindFirstObjectByType<PlayerController>().entity;
+                npcEntity = GetComponent<NpcBehavior>().GetNpcEntity();
+        }
+
         public virtual string giveItem(string name)
         {
             Debug.Log("GIVE ITEM : "+name);
@@ -13,13 +25,18 @@ namespace DefaultNamespace.npcs.functions
         public virtual string sellItem(string name, int price)
         {
             Debug.Log("SELL ITEM : "+name+" for "+price);
+            playerEntity.TransferGoldTo(npcEntity, price);
             return "SOLD ITEM : "+name+" for "+price;
         }
 
         public virtual string listItems()
         {
-            Debug.Log("LIST ITEMS");
-            return "LISTED ITEMS";
+            return "Available items:\n" + string.Join("\n", getAvailableItems().Select(item => item.ToString()));
+        }
+        
+        public virtual ItemDto[] getAvailableItems()
+        {
+            return new ItemDto[] {};
         }
     }
 }

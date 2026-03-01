@@ -9,7 +9,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform npcUi;
     [SerializeField] private LayerMask npcLayer;
 
-    private PlayerEntity entity;
+    public PlayerEntity entity { get; private set; }
     private PlayerHudController hudController;
     private NpcUi dialogueController;
     private Camera camera;
