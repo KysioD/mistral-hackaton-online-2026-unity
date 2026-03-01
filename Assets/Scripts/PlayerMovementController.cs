@@ -7,7 +7,6 @@ public class PlayerMovementController : MonoBehaviour
     [SerializeField] private float sprintSpeed = 15.0f;
     [SerializeField] private float cameraSensitivity = 0.1f;
     [SerializeField] private float jumpStrength = 9.81f / 2;
-    [SerializeField] private float interactRange = 2.0f;
 
     private Camera camera;
     private Rigidbody rigidBody;
@@ -44,7 +43,8 @@ public class PlayerMovementController : MonoBehaviour
         yRotation += mouseX;
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90.0f, 90.0f);
-        camera.transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0.0f);
+        transform.localRotation = Quaternion.Euler(0.0f, yRotation, 0.0f);
+        camera.transform.localRotation = Quaternion.Euler(xRotation, 0.0f, 0.0f);
     }
 
     void FixedUpdate()
@@ -53,8 +53,8 @@ public class PlayerMovementController : MonoBehaviour
 
         Vector2 moveInputVector = GameLogic.playerInputActions.Player.Move.ReadValue<Vector2>();
         Vector3 velocity = Vector3.zero;
-        velocity += moveInputVector.x * camera.transform.right;
-        velocity += moveInputVector.y * camera.transform.forward;
+        velocity += moveInputVector.x * transform.right;
+        velocity += moveInputVector.y * transform.forward;
         velocity *= grounded ? moveSpeed : moveSpeed / 2;
         rigidBody.AddForce(velocity, ForceMode.Force);
     }
@@ -65,5 +65,10 @@ public class PlayerMovementController : MonoBehaviour
         rigidBody.AddForce(new Vector3(0.0f, jumpStrength, 0.0f), ForceMode.Impulse);
         grounded = false;
         lastJumpTime = Time.time;
+    }
+
+    void OnDestroy()
+    {
+        GameLogic.playerInputActions.Player.Jump.performed -= Jump;
     }
 }

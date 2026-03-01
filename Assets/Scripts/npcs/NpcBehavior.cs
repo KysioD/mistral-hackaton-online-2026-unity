@@ -10,6 +10,7 @@ public class NpcBehavior : MonoBehaviour
     void Start()
     {
         entity = new NpcEntity();
+        Spawn();
     }
 
     void Update()
@@ -17,7 +18,7 @@ public class NpcBehavior : MonoBehaviour
 
     }
 
-    public void Interact()
+    public void InteractWith()
     {
 
     }
@@ -26,9 +27,14 @@ public class NpcBehavior : MonoBehaviour
     {
         this.gameObject.SetActive(true);
         Vector4 spawnCoords = entity.SpawnCoords;
-        this.transform.position = new Vector3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
+        //this.transform.position = new Vector3(spawnCoords.x, spawnCoords.y, spawnCoords.z);
         this.transform.localRotation = Quaternion.Euler(new Vector3(0.0f, spawnCoords.w, 0.0f));
         entityNameMesh.SetText(entity.Name);
 
+    }
+
+    public ref NpcEntity GetNpcEntity()
+    {
+        return ref entity;
     }
 }

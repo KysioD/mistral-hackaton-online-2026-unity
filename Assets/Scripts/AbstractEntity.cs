@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Unity.Mathematics;
 
 public abstract class AbstractEntity
 {
     public float Health { get; set; } = 100.0f;
-    public int Gold { get; set; } = 0;
+    public int Gold { get; set; } = UnityEngine.Random.Range(10, 1000);
     public Dictionary<EntityStatus.EType, EntityStatus> entityStatuses;
-
-    //TODO: inventory+held item
 
     public void Heal(int health)
     {

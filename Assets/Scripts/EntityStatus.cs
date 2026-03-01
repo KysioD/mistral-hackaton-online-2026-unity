@@ -1,11 +1,10 @@
 using System;
-using UnityEngine;
 
 public abstract class EntityStatus
 {
     public enum EType
     {
-        Wanted, Ill
+        HealthProblem
     };
 
     public abstract string Serialize();
@@ -19,37 +18,9 @@ public abstract class EntityStatus
         return HashCode.Combine(GetType());
     }
 
-    public class Wanted : EntityStatus
+    public class HealthProblem : EntityStatus
     {
-        public float Bounty { get; set; }
-        public EViolation Violation { get; set; }
-
-        public override string Serialize()
-        {
-            return "{  }";
-        }
-
-        public override string GetIdentifier()
-        {
-            return "wanted";
-        }
-
-        public override EType GetType()
-        {
-            return EType.Wanted;
-        }
-
-        public enum EViolation
-        {
-            None = 0,
-            Murder,
-            Theft
-        }
-    }
-
-    public class Ill : EntityStatus
-    {
-        public EIllness Illness { get; set; }
+        public EProblem Problem { get; set; }
 
         public override string Serialize()
         {
@@ -58,18 +29,21 @@ public abstract class EntityStatus
 
         public override string GetIdentifier()
         {
-            return "ill";
+            return "healthProblem";
         }
 
         public override EType GetType()
         {
-            return EType.Ill;
+            return EType.HealthProblem;
         }
 
-        public enum EIllness
+        public enum EProblem
         {
             Cold = 0,
-            Poison
+            Poison,
+            Wound,
+            Allergy,
+            Urticaria
         }
     }
 }

@@ -19,11 +19,11 @@ public class PlayerHudController : MonoBehaviour
 
     public void SetGold(float gold)
     {
-        healthMesh.SetText("Gold: " + gold);
+        goldMesh.SetText("Gold: " + gold);
     }
 
     public void SetMagic(int magic)
     {
-        healthMesh.SetText("Magic: " + magic);
+        magicMesh.SetText("Magic: " + magic);
     }
 }
