@@ -1,0 +1,62 @@
+# Blender 4.5.3 LTS MTL File: 'human_male.blend'
+# www.blender.org
+
+newmtl mat_human_female_light_boots_2
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd modular_rpg_characters/textures/tavern_keeper_boots.png
+
+newmtl mat_human_male_hair_2
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd modular_rpg_characters/textures/tavern_keeper_hair.png
+
+newmtl mat_human_male_head_5
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd modular_rpg_characters/textures/tavern_keeper_head.png
+
+newmtl mat_human_male_light_armor_4
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd modular_rpg_characters/textures/tavern_keeper_armor.png
+
+newmtl mat_human_male_light_armor_4_skirt
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd modular_rpg_characters/textures/tavern_keeper_armor.png
+
+newmtl mat_human_male_light_gloves
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd modular_rpg_characters/textures/tavern_keeper_gloves.png

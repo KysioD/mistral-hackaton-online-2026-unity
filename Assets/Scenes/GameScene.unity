@@ -2913,7 +2913,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 3.1253588, y: 1, z: 3.1253588}
+  m_LocalScale: {x: 5.9431825, y: 1.9016, z: 5.9431825}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 651756577}
@@ -4006,6 +4006,7 @@ MonoBehaviour:
   voxtralCapture: {fileID: 1320643234}
   voiceBtn: {fileID: 326820068}
   micDropdown: {fileID: 0}
+  maxRecordingSeconds: 30
 --- !u!1 &1981129392
 GameObject:
   m_ObjectHideFlags: 0
