@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using npcs;
+using ui;
 using UnityEngine;
 
 namespace DefaultNamespace.npcs.functions
@@ -35,6 +36,7 @@ namespace DefaultNamespace.npcs.functions
             
             npcEntity.TransferGoldTo(playerEntity, price);
             playerEntity.RemoveFromInventory(name, 1);
+            ToastNotificationService.Show($"Sold : {name} (+{price} or)");
             return $"Bought {name} for {price} coins";
         }
 
