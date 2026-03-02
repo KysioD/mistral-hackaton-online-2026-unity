@@ -1,6 +1,6 @@
-﻿# Project name
+﻿# Living NPCs
 
-**Project name** is a Unity prototype demonstrating how Large Language Models (LLMs) can be used to enable dynamic, unscripted interactions with NPCs in video games.
+**Living NPCs** is a Unity prototype demonstrating how Large Language Models (LLMs) can be used to enable dynamic, unscripted interactions with NPCs in video games.
 
 ## Context
 
@@ -85,4 +85,5 @@ sequenceDiagram
 - Jump: Space or A
 - Sprint: Left Shift or Left Stick Press
 - Interact: E or Y
+
 - Pause/Close UI: Esc or Start
